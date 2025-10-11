@@ -205,17 +205,17 @@ export default function ProfilePage() {
     <Image
       src={URL.createObjectURL(profileImage)}
       alt="Profile"
-      fill
+      width={80}
+      height={80}
       className="object-cover"
-      sizes="80px"
     />
   ) : userData?.profilePicture ? (
     <Image
       src={userData.profilePicture}
       alt="Profile"
-      fill
+      width={80}
+      height={80}
       className="object-cover"
-      sizes="80px"
     />
   ) : (
     <User className="w-10 h-10 text-gray-400" />
@@ -251,17 +251,17 @@ export default function ProfilePage() {
     <Image
       src={URL.createObjectURL(profileImage)}
       alt="Profile"
-      fill
+      width={96}
+      height={96}
       className="object-cover"
-      sizes="96px"
     />
   ) : userData?.profilePicture ? (
     <Image
       src={userData.profilePicture}
       alt="Profile"
-      fill
+      width={96}
+      height={96}
       className="object-cover"
-      sizes="96px"
     />
   ) : (
     <User className="w-12 h-12 text-gray-400" />

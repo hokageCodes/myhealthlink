@@ -119,11 +119,17 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
                         <Image
                           src={user.profilePicture}
                           alt={user.name || 'User'}
+                          width={48}
+                          height={48}
                           className="w-full h-full object-cover"
+                          unoptimized
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
                         />
-                      ) : (
-                        <UserCircle className="w-8 h-8 text-white" />
-                      )}
+                      ) : null}
+                      <UserCircle className="w-8 h-8 text-white" style={{ display: user?.profilePicture ? 'none' : 'block' }} />
                     </div>
                     <div className="ml-3">
                       <h3 className="text-lg font-semibold">

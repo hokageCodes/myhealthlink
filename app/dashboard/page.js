@@ -30,6 +30,8 @@ import {
 import Link from 'next/link';
 import { documentsAPI } from '@/lib/api/documents';
 import { healthAPI } from '@/lib/api/health';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import AnimatedCard from '@/components/ui/AnimatedCard';
 
 // Utility functions
 const formatTimeAgo = (date) => {
@@ -67,10 +69,10 @@ const getHealthScore = (metrics) => {
 
 const StatCard = ({ title, value, change, icon: Icon, color, href, loading }) => (
   <Link href={href || '#'} className="group">
-    <motion.div
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      className="bg-white rounded-xl p-4 shadow-medium border border-surface-300 hover:shadow-strong hover:border-surface-400 transition-all duration-200"
+    <AnimatedCard
+      className="bg-white dark:bg-surface-800 rounded-xl p-4 shadow-medium border border-surface-300 dark:border-surface-700 hover:shadow-strong hover:border-surface-400 dark:hover:border-surface-600 transition-all duration-200"
+      hoverScale={1.02}
+      tiltIntensity={5}
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 bg-${color}-100 rounded-lg flex items-center justify-center`}>
@@ -89,12 +91,21 @@ const StatCard = ({ title, value, change, icon: Icon, color, href, loading }) =>
         )}
       </div>
       <div>
-        <div className="text-xl font-bold text-surface-900 mb-1">
-          {loading ? <div className="animate-pulse bg-surface-200 h-6 w-12 rounded"></div> : value}
+        <div className="text-xl font-bold text-surface-900 dark:text-white mb-1">
+          {loading ? (
+            <div className="animate-pulse bg-surface-200 dark:bg-surface-700 h-6 w-12 rounded"></div>
+          ) : (
+            <AnimatedCounter 
+              value={typeof value === 'string' && value.includes('%') ? parseInt(value) : value} 
+              suffix={typeof value === 'string' && value.includes('%') ? '%' : ''}
+              duration={1.5}
+              delay={0.2}
+            />
+          )}
         </div>
-        <p className="text-sm text-surface-600">{title}</p>
+        <p className="text-sm text-surface-600 dark:text-surface-400">{title}</p>
       </div>
-    </motion.div>
+    </AnimatedCard>
   </Link>
 );
 
@@ -143,7 +154,7 @@ const MetricCard = ({ metric, loading }) => {
   return (
     <motion.div
       whileHover={{ y: -1 }}
-      className="bg-white rounded-lg p-4 border border-surface-300 hover:shadow-soft hover:border-surface-400 transition-all duration-200"
+      className="bg-white rounded-lg px-4 py-48 border border-surface-300 hover:shadow-soft hover:border-surface-400 transition-all duration-200"
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`w-8 h-8 bg-${color}-100 rounded-lg flex items-center justify-center`}>
@@ -296,10 +307,17 @@ export default function Dashboard() {
 
   const quickActions = [
     {
+      name: 'View Analytics',
+      description: 'Health trends & insights',
+      icon: BarChart3,
+      color: 'brand',
+      href: '/dashboard/analytics',
+    },
+    {
       name: 'Upload Document',
       description: 'Add new medical records',
       icon: FileText,
-      color: 'brand',
+      color: 'accent',
       href: '/dashboard/documents',
     },
     {
@@ -320,86 +338,22 @@ export default function Dashboard() {
       name: 'Update Profile',
       description: 'Manage your info',
       icon: User,
-      color: 'accent',
+      color: 'surface',
       href: '/dashboard/profile',
     }
   ];
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 p-4 md:p-6 bg-surface-50 dark:bg-surface-900">
       {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden bg-brand-600 rounded-2xl p-6 md:p-8 text-white"
-      >
-        <div className="absolute inset-0 bg-black/5"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{greeting}!</h1>
-              <p className="text-brand-100 text-sm md:text-base">Welcome to your health dashboard</p>
-            </div>
-            
-            {/* Health Score Badge */}
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center min-w-[100px]">
-              <div className="flex items-center justify-center space-x-2 mb-1">
-                <Heart className="w-5 h-5 text-white" />
-                <span className="text-xs font-medium text-white">Health Score</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {summaryLoading ? (
-                  <div className="animate-pulse bg-white/20 h-8 w-12 rounded mx-auto"></div>
-                ) : (
-                  `${stats.healthScore}%`
-                )}
-              </div>
-              <div className="flex items-center justify-center space-x-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-accent-300" />
-                <span className="text-xs text-accent-300">+5%</span>
-              </div>
-            </div>
-          </div>
-          <p className="text-brand-100 text-sm md:text-lg max-w-2xl mb-6">
-            Monitor your health, manage your documents, and share your medical information 
-            with healthcare providers seamlessly.
-          </p>
-          
-          {/* Quick Share Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link href="/dashboard/share">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center space-x-2 bg-white text-brand-600 px-6 py-3 rounded-xl font-semibold hover:bg-brand-50 transition-colors"
-              >
-                <QrCode className="w-5 h-5" />
-                <span>Generate QR Code</span>
-              </motion.button>
-            </Link>
-            <Link href="/dashboard/share">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center space-x-2 border border-white/30 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/10 transition-colors"
-              >
-                <Share className="w-5 h-5" />
-                <span>Share Profile</span>
-              </motion.button>
-            </Link>
-          </div>
-        </div>
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-white/10 rounded-full"></div>
-      </motion.div>
+
 
       {/* Stats Grid */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
       >
         <StatCard
           title="Documents"
@@ -420,6 +374,14 @@ export default function Dashboard() {
           loading={healthLoading}
         />
         <StatCard
+          title="Health Score"
+          value={`${stats.healthScore}%`}
+          change={5}
+          icon={Heart}
+          color="danger"
+          loading={summaryLoading}
+        />
+        <StatCard
           title="Profile Views"
           value={stats.profileViews}
           change={-2}
@@ -427,7 +389,7 @@ export default function Dashboard() {
           color="warning"
           href="/dashboard/share"
         />
-      </motion.div>
+      </motion.div> */}
 
       {/* Quick Actions */}
       <motion.div

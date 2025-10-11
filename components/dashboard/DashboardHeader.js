@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Bell, Search, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useLogout } from '@/lib/hooks/useAuth';
 import Image from 'next/image';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function DashboardHeader({ user, sidebarOpen, setSidebarOpen }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +58,9 @@ export default function DashboardHeader({ user, sidebarOpen, setSidebarOpen }) {
               <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
             </button>
 
+            {/* Theme Toggle */}
+            <ThemeToggle showLabel={false} />
+
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button 
@@ -68,13 +72,17 @@ export default function DashboardHeader({ user, sidebarOpen, setSidebarOpen }) {
                     <Image
                       src={user.profilePicture}
                       alt={user.name || 'User'}
+                      width={32}
+                      height={32}
                       className="w-full h-full object-cover"
-                      fill
-                      sizes="32px"
+                      unoptimized
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
                     />
-                  ) : (
-                    <User className="w-5 h-5 text-gray-600" />
-                  )}
+                  ) : null}
+                  <User className="w-5 h-5 text-gray-600" style={{ display: user?.profilePicture ? 'none' : 'block' }} />
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-gray-900">

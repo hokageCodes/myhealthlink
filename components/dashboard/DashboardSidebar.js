@@ -23,11 +23,12 @@ import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Privacy & Sharing', href: '/dashboard/privacy', icon: Shield },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
   { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-  { name: 'Health Data', href: '/dashboard/health', icon: BarChart3 },
+  { name: 'Health Data', href: '/dashboard/health', icon: Heart },
   { name: 'Emergency', href: '/dashboard/emergency', icon: Shield },
   { name: 'Medications', href: '/dashboard/medications', icon: Heart },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Phone },
@@ -82,13 +83,17 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
                 <Image
                   src={user.profilePicture}
                   alt={user.name || 'User'}
+                  width={40}
+                  height={40}
                   className="w-full h-full object-cover"
-                  fill
-                  sizes="40px"
+                  unoptimized
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
                 />
-              ) : (
-                <User className="w-6 h-6 text-gray-600" />
-              )}
+              ) : null}
+              <User className="w-6 h-6 text-gray-600" style={{ display: user?.profilePicture ? 'none' : 'block' }} />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">

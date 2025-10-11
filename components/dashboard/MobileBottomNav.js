@@ -14,9 +14,8 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Health', href: '/dashboard/health', icon: Heart },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-  { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
@@ -28,7 +27,7 @@ export default function MobileBottomNav() {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed bottom-3 left-3 right-3 bg-white border border-surface-200 shadow-medium rounded-2xl md:hidden z-50"
+      className="fixed bottom-4 left-4 right-4 bg-white border border-surface-200 shadow-medium rounded-2xl md:hidden z-50"
     >
       <div className="flex items-center justify-around py-2 px-1">
         {navigation.map((item) => {

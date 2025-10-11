@@ -141,9 +141,9 @@ export default function SharePage() {
                       <Image
                         src={user.profilePicture}
                         alt={user.name}
+                        width={64}
+                        height={64}
                         className="w-full h-full object-cover rounded-xl"
-                        fill
-                        sizes="64px"
                       />
                     ) : (
                       <User className="w-8 h-8 text-surface-400" />

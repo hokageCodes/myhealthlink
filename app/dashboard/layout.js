@@ -10,6 +10,7 @@ import MobileBottomNav from '@/components/dashboard/MobileBottomNav';
 import MobileDrawer from '@/components/dashboard/MobileDrawer';
 import { useQuery } from '@tanstack/react-query';
 import { authAPI } from '@/lib/api/auth';
+import PWAInstallBanner, { PWAUpdateBanner } from '@/components/ui/PWAInstallBanner';
 
 export default function DashboardLayout({ children }) {
   const { isAuthenticated, getToken, handleAuthError } = useAuth();
@@ -163,7 +164,7 @@ export default function DashboardLayout({ children }) {
         </motion.div>
 
         {/* Mobile Page Content */}
-        <main className="flex-1 overflow-auto pb-20">
+        <main className="flex-1 overflow-auto pb-32">
           <AnimatePresence mode="wait">
             <motion.div
               key={router.pathname}
@@ -191,6 +192,10 @@ export default function DashboardLayout({ children }) {
             />
           )}
         </AnimatePresence>
+
+        {/* PWA Banners */}
+        <PWAUpdateBanner />
+        <PWAInstallBanner />
       </div>
     </div>
   );

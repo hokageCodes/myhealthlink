@@ -95,9 +95,9 @@ export default function PublicProfilePage() {
                   <Image
                     src={profileData.profilePicture}
                     alt={profileData.name}
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
-                    fill
-                    sizes="96px"
                   />
                 ) : (
                   <User className="w-12 h-12 text-white" />
