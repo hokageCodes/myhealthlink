@@ -18,6 +18,13 @@ const authenticate = async (req, res, next) => {
     // Verify token
     const decoded = verifyToken(token);
     
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format.'
+      });
+    }
+    
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password -refreshTokens');
     
@@ -36,11 +43,19 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Add user to request object
-    req.user = user;
+    // FIXED: Add both user object and userId to request
+    req.user = {
+      userId: user._id,
+      email: user.email,
+      username: user.username,
+      name: user.name,
+      fullUser: user // Include full user object in case controllers need it
+    };
+    
     next();
   } catch (error) {
     console.error('Authentication error:', error);
+    console.error('Error stack:', error.stack);
     
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
@@ -58,7 +73,8 @@ const authenticate = async (req, res, next) => {
     
     return res.status(500).json({
       success: false,
-      message: 'Authentication failed.'
+      message: 'Authentication failed.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -74,10 +90,21 @@ const optionalAuth = async (req, res, next) => {
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
+    
+    if (!decoded || !decoded.userId) {
+      return next();
+    }
+    
     const user = await User.findById(decoded.userId).select('-password -refreshTokens');
     
     if (user) {
-      req.user = user;
+      req.user = {
+        userId: user._id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        fullUser: user
+      };
     }
     
     next();

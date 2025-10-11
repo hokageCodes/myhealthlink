@@ -511,7 +511,7 @@ const resendOTP = async (req, res) => {
 // Logout
 const logout = async (req, res) => {
   try {
-    const { refreshToken } = req.cookies;
+    const refreshToken = req.cookies?.refreshToken;
 
     if (refreshToken) {
       // Remove refresh token from user's tokens array

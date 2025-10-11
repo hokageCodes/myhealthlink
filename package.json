@@ -9,13 +9,50 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "@tanstack/react-query-devtools": "^5.59.0",
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "chart.js": "^4.4.6",
+    "cloudinary": "^2.7.0",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "formidable": "^3.5.4",
+    "formik": "^2.4.6",
+    "helmet": "^8.0.0",
+    "html2canvas": "^1.4.1",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.469.0",
+    "mongoose": "^8.9.0",
+    "multer": "^1.4.5-lts.1",
+    "next": "15.5.4",
+    "nodemailer": "^6.9.15",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4"
+    "react-hook-form": "^7.54.0",
+    "react-hot-toast": "^2.4.1",
+    "react-toastify": "^11.0.5",
+    "sharp": "^0.33.5",
+    "streamifier": "^0.1.1",
+    "uuid": "^11.0.3",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "autoprefixer": "^10.4.14",
+    "concurrently": "^9.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
-    "@eslint/eslintrc": "^3"
+    "nodemon": "^3.1.9",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.5",
+    "tailwindcss-animate": "^1.0.7"
   }
 }

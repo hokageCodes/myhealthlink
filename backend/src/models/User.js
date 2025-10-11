@@ -43,6 +43,47 @@ const userSchema = new mongoose.Schema({
     sparse: true
   },
   
+  // Medical information
+  bloodType: {
+    type: String,
+    enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+    default: null
+  },
+  allergies: {
+    type: String,
+    maxlength: [500, 'Allergies description cannot exceed 500 characters']
+  },
+  
+  // Emergency contact
+  emergencyContact: {
+    name: {
+      type: String,
+      maxlength: [50, 'Emergency contact name cannot exceed 50 characters']
+    },
+    phone: {
+      type: String
+    },
+    relationship: {
+      type: String,
+      maxlength: [30, 'Relationship cannot exceed 30 characters']
+    }
+  },
+  
+  // Profile picture
+  profilePicture: {
+    type: String
+  },
+  
+  // Public sharing settings
+  isPublicProfile: {
+    type: Boolean,
+    default: false
+  },
+  publicFields: [{
+    type: String,
+    enum: ['bloodType', 'allergies', 'emergencyContact', 'medications', 'healthMetrics']
+  }],
+  
   // Verification status
   isEmailVerified: {
     type: Boolean,

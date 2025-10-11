@@ -1,24 +1,28 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
+const { upload } = require('../middleware/documentUpload');
+const { 
+  getDocuments, 
+  getDocument, 
+  uploadDocument, 
+  updateDocument, 
+  deleteDocument, 
+  downloadDocument, 
+  getCategories 
+} = require('../controllers/documentController');
 
 const router = express.Router();
 
-// Get user documents
-router.get('/', authenticate, async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      data: {
-        documents: []
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get documents',
-      error: error.message
-    });
-  }
-});
+// All document routes require authentication
+router.use(authenticate);
+
+// Document routes
+router.get('/', getDocuments);
+router.get('/categories', getCategories);
+router.get('/:id', getDocument);
+router.post('/', upload.single('file'), uploadDocument);
+router.put('/:id', updateDocument);
+router.delete('/:id', deleteDocument);
+router.get('/:id/download', downloadDocument);
 
 module.exports = router;
