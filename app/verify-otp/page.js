@@ -227,7 +227,7 @@ function VerifyOTPContent() {
             {/* Resend OTP */}
             <div className="mt-6 text-center">
               <p className="text-gray-600 mb-4">
-                Didn't receive the code?
+                Didnt receive the code?
               </p>
               <button
                 onClick={handleResendOTP}
@@ -249,7 +249,7 @@ function VerifyOTPContent() {
           {/* Help */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Check your spam folder if you don't see the email.
+              Check your spam folder if you dont see the email.
             </p>
           </div>
         </div>
