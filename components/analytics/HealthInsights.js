@@ -171,7 +171,7 @@ const HealthInsights = ({ insights = [] }) => {
           <div>
             <h4 className="font-semibold text-surface-900">Weekly Summary</h4>
             <p className="text-sm text-surface-600">
-              You've received {insightsToShow.length} insights this week. Keep up the great work!
+              You have received {insightsToShow.length} insights this week. Keep up the great work!
             </p>
           </div>
         </div>
