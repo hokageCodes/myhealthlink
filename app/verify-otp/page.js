@@ -216,7 +216,7 @@ export default function VerifyOTP() {
           {/* Help */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Check your spam folder if you don't see the email.
+              Check your spam folder if you dont see the email.
             </p>
           </div>
         </div>

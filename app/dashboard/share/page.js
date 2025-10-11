@@ -20,6 +20,7 @@ import QRCodeModal from '@/components/QRCodeModal';
 import { authAPI } from '@/lib/api/auth';
 import { useAuth } from '@/lib/hooks/useAuth';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function SharePage() {
   const { getToken } = useAuth();

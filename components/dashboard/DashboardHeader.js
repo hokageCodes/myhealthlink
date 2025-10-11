@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Bell, Search, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useLogout } from '@/lib/hooks/useAuth';
+import Image from 'next/image';
 
 export default function DashboardHeader({ user, sidebarOpen, setSidebarOpen }) {
   const [searchQuery, setSearchQuery] = useState('');

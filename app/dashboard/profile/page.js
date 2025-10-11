@@ -19,6 +19,7 @@ import {
   Check
 } from 'lucide-react';
 import { authAPI } from '@/lib/api/auth';
+import Image from 'next/image';
 
 // Profile validation schema
 const profileSchema = Yup.object({
