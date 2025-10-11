@@ -94,7 +94,7 @@ export default function VerifyOTP() {
               </div>
               <div>
                 <h3 className="font-semibold">Check Your Email</h3>
-                <p className="text-blue-100 text-sm">We've sent a verification code</p>
+                <p className="text-blue-100 text-sm">We have sent a verification code</p>
               </div>
             </div>
             
@@ -129,7 +129,7 @@ export default function VerifyOTP() {
               Verify Your Email
             </h1>
             <p className="text-gray-600">
-              We've sent a verification code to<br />
+              We have sent a verification code to<br />
               <span className="font-medium text-gray-900">{email}</span>
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function VerifyOTP() {
               Verify Your Email
             </h1>
             <p className="text-gray-600">
-              We've sent a verification code to<br />
+              We have sent a verification code to<br />
               <span className="font-medium text-gray-900">{email}</span>
             </p>
           </div>
@@ -194,7 +194,7 @@ export default function VerifyOTP() {
             {/* Resend OTP */}
             <div className="mt-6 text-center">
               <p className="text-gray-600 mb-4">
-                Didn't receive the code?
+                Didnt receive the code?
               </p>
               <button
                 onClick={handleResendOTP}

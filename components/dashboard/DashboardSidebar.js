@@ -78,10 +78,12 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
           <div className="flex items-center">
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
               {user?.profilePicture ? (
-                <img
+                <Image
                   src={user.profilePicture}
                   alt={user.name || 'User'}
                   className="w-full h-full object-cover"
+                  fill
+                  sizes="40px"
                 />
               ) : (
                 <User className="w-6 h-6 text-gray-600" />

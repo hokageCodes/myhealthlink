@@ -60,7 +60,7 @@ export default function ForgotPassword() {
             </h1>
             
             <p className="text-gray-600 mb-6">
-              We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.
+              Weve sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.
             </p>
             
             <div className="space-y-4">
@@ -93,7 +93,7 @@ export default function ForgotPassword() {
           <div className="text-center mb-8">
             <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
             <h1 className="text-4xl font-bold mb-4">Reset Password</h1>
-            <p className="text-xl text-blue-100 mb-8">We'll help you get back into your account</p>
+            <p className="text-xl text-blue-100 mb-8">We will help you get back into your account</p>
           </div>
           
           <div className="space-y-6 max-w-md">
@@ -103,7 +103,7 @@ export default function ForgotPassword() {
               </div>
               <div>
                 <h3 className="font-semibold">Email Verification</h3>
-                <p className="text-blue-100 text-sm">We'll send a reset link to your email</p>
+                <p className="text-blue-100 text-sm">We will send a reset link to your email</p>
               </div>
             </div>
             
@@ -148,7 +148,7 @@ export default function ForgotPassword() {
               Forgot Password?
             </h1>
             <p className="text-gray-600">
-              No worries, we'll send you reset instructions
+              No worries, we will send you reset instructions
             </p>
           </div>
 
@@ -165,7 +165,7 @@ export default function ForgotPassword() {
               Forgot Password?
             </h1>
             <p className="text-gray-600">
-              No worries, we'll send you reset instructions
+              No worries, we will send you reset instructions
             </p>
           </div>
 

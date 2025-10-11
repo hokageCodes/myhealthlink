@@ -199,23 +199,28 @@ export default function ProfilePage() {
           {/* Mobile Layout */}
           <div className="lg:hidden text-center">
             <div className="relative inline-block">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden mx-auto">
-                {profileImage ? (
-                  <img
-                    src={URL.createObjectURL(profileImage)}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : userData?.profilePicture ? (
-                  <img
-                    src={userData.profilePicture}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-10 h-10 text-gray-400" />
-                )}
-              </div>
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden mx-auto relative">
+  {profileImage ? (
+    <Image
+      src={URL.createObjectURL(profileImage)}
+      alt="Profile"
+      fill
+      className="object-cover"
+      sizes="80px"
+    />
+  ) : userData?.profilePicture ? (
+    <Image
+      src={userData.profilePicture}
+      alt="Profile"
+      fill
+      className="object-cover"
+      sizes="80px"
+    />
+  ) : (
+    <User className="w-10 h-10 text-gray-400" />
+  )}
+</div>
+
               {isEditing && (
                 <label className="absolute bottom-0 right-0 bg-gray-900 text-white p-1.5 rounded-full cursor-pointer">
                   <Camera className="w-3 h-3" />
@@ -240,23 +245,28 @@ export default function ProfilePage() {
           {/* Desktop Layout */}
           <div className="hidden lg:flex items-center space-x-6">
             <div className="relative">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-                {profileImage ? (
-                  <img
-                    src={URL.createObjectURL(profileImage)}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : userData?.profilePicture ? (
-                  <img
-                    src={userData.profilePicture}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-gray-400" />
-                )}
-              </div>
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden relative">
+  {profileImage ? (
+    <Image
+      src={URL.createObjectURL(profileImage)}
+      alt="Profile"
+      fill
+      className="object-cover"
+      sizes="96px"
+    />
+  ) : userData?.profilePicture ? (
+    <Image
+      src={userData.profilePicture}
+      alt="Profile"
+      fill
+      className="object-cover"
+      sizes="96px"
+    />
+  ) : (
+    <User className="w-12 h-12 text-gray-400" />
+  )}
+</div>
+
               {isEditing && (
                 <label className="absolute bottom-0 right-0 bg-gray-900 text-white p-2 rounded-full cursor-pointer hover:bg-gray-800 transition-colors">
                   <Camera className="w-4 h-4" />

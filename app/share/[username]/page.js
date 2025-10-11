@@ -13,6 +13,7 @@ import {
   Share2,
   QrCode
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -91,10 +92,12 @@ export default function PublicProfilePage() {
             <div className="flex items-center space-x-6">
               <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
                 {profileData.profilePicture ? (
-                  <img
+                  <Image
                     src={profileData.profilePicture}
                     alt={profileData.name}
                     className="w-full h-full object-cover"
+                    fill
+                    sizes="96px"
                   />
                 ) : (
                   <User className="w-12 h-12 text-white" />
