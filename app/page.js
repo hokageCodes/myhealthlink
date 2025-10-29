@@ -107,7 +107,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-semibold mb-4">Easy Sharing</h3>
             <p className="text-gray-600">
-              Share your complete health profile with doctors, emergency contacts, or family members via a single link or QR code.
+              Share your complete health profile with healthcare providers, emergency contacts, or family members via a single link or QR code.
             </p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function Home() {
                 4
               </div>
               <h3 className="text-lg font-semibold mb-2">Share & Access</h3>
-              <p className="text-gray-600">Share your health link or QR code with doctors and emergency contacts.</p>
+              <p className="text-gray-600">Share your health link or QR code with healthcare providers and emergency contacts.</p>
             </div>
           </div>
         </section>

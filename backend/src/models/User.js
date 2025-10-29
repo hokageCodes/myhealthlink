@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, 'Allergies description cannot exceed 500 characters']
   },
+  chronicConditions: {
+    type: String,
+    maxlength: [500, 'Chronic conditions description cannot exceed 500 characters']
+  },
   
   // Emergency contact
   emergencyContact: {
@@ -67,6 +71,47 @@ const userSchema = new mongoose.Schema({
       type: String,
       maxlength: [30, 'Relationship cannot exceed 30 characters']
     }
+  },
+  
+  // Additional emergency contacts
+  additionalContacts: [{
+    name: {
+      type: String,
+      required: true,
+      maxlength: [50, 'Contact name cannot exceed 50 characters']
+    },
+    phone: {
+      type: String,
+      required: true
+    },
+    relationship: {
+      type: String,
+      maxlength: [30, 'Relationship cannot exceed 30 characters']
+    }
+  }],
+  
+  // Emergency mode settings
+  emergencyMode: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    showCriticalOnly: {
+      type: Boolean,
+      default: true
+    },
+    criticalFields: [{
+      type: String,
+      enum: [
+        'bloodType',
+        'allergies',
+        'emergencyContact',
+        'chronicConditions',
+        'medications',
+        'healthMetrics'
+      ],
+      default: ['bloodType', 'allergies', 'emergencyContact', 'chronicConditions']
+    }]
   },
   
   // Profile picture
@@ -115,6 +160,28 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   shareableLink: String,
+  
+  // Share link security settings
+  shareLinkSettings: {
+    accessType: {
+      type: String,
+      enum: ['public', 'password', 'otp', 'none'],
+      default: 'public'
+    },
+    password: {
+      type: String, // Hashed password for share link
+      select: false
+    },
+    requiresOTP: {
+      type: Boolean,
+      default: false
+    },
+    shareOTP: String, // OTP for share link access
+    shareOTPExpires: Date,
+    expiresAt: Date, // Link expiration date
+    accessToken: String, // Temporary access token after password/OTP verification
+    accessTokenExpires: Date
+  },
   
   // Timestamps
   lastLogin: Date,

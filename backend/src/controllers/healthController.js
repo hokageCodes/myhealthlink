@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const HealthMetric = require('../models/HealthMetric');
 const User = require('../models/User');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 // @desc    Get health metrics for a user
 // @route   GET /api/health/metrics
@@ -28,9 +29,22 @@ const getHealthMetrics = async (req, res) => {
       .sort({ date: -1 })
       .limit(parseInt(limit));
 
+    // Decrypt notes for all metrics
+    const decryptedMetrics = metrics.map(metric => {
+      if (metric.notes) {
+        try {
+          metric.notes = decrypt(metric.notes);
+        } catch (e) {
+          // If decryption fails, notes might not be encrypted (old data)
+          console.warn('Could not decrypt notes for metric:', metric._id);
+        }
+      }
+      return metric;
+    });
+
     res.status(200).json({
       success: true,
-      data: metrics
+      data: decryptedMetrics
     });
   } catch (error) {
     console.error('Error fetching health metrics:', error);
@@ -67,17 +81,30 @@ const addHealthMetric = async (req, res) => {
       }
     }
 
+    // Encrypt sensitive notes if provided
+    const encryptedNotes = notes ? encrypt(notes) : null;
+
     const healthMetric = new HealthMetric({
       userId,
       type,
       value,
       unit,
-      notes,
+      notes: encryptedNotes,
       date: date ? new Date(date) : new Date(),
       metadata: metadata || {}
     });
 
     await healthMetric.save();
+
+    // Decrypt notes for response
+    if (healthMetric.notes) {
+      try {
+        healthMetric.notes = decrypt(healthMetric.notes);
+      } catch (e) {
+        // If decryption fails, notes might not be encrypted (old data)
+        console.warn('Could not decrypt notes:', e);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -115,11 +142,23 @@ const updateHealthMetric = async (req, res) => {
     if (type !== undefined) healthMetric.type = type;
     if (value !== undefined) healthMetric.value = value;
     if (unit !== undefined) healthMetric.unit = unit;
-    if (notes !== undefined) healthMetric.notes = notes;
+    if (notes !== undefined) {
+      // Encrypt notes before saving
+      healthMetric.notes = notes ? encrypt(notes) : null;
+    }
     if (date !== undefined) healthMetric.date = new Date(date);
     if (metadata !== undefined) healthMetric.metadata = metadata;
 
     await healthMetric.save();
+
+    // Decrypt notes for response
+    if (healthMetric.notes) {
+      try {
+        healthMetric.notes = decrypt(healthMetric.notes);
+      } catch (e) {
+        console.warn('Could not decrypt notes:', e);
+      }
+    }
 
     res.status(200).json({
       success: true,

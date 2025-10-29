@@ -114,7 +114,7 @@ export default function SharePage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Preview */}
           <motion.div
@@ -136,14 +136,14 @@ export default function SharePage() {
             {user ? (
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-surface-200 rounded-xl flex items-center justify-center">
+                  <div className="relative w-16 h-16 bg-surface-200 rounded-xl flex items-center justify-center overflow-hidden">
                     {user.profilePicture ? (
                       <Image
                         src={user.profilePicture}
                         alt={user.name}
-                        className="w-full h-full object-cover rounded-xl"
                         fill
                         sizes="64px"
+                        className="object-cover rounded-xl"
                       />
                     ) : (
                       <User className="w-8 h-8 text-surface-400" />

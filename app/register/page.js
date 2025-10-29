@@ -91,7 +91,7 @@ export default function Register() {
               </div>
               <div>
                 <h3 className="font-semibold">Easy Sharing</h3>
-                <p className="text-blue-100 text-sm">Share with doctors and family</p>
+                <p className="text-blue-100 text-sm">Share with healthcare providers and family</p>
               </div>
             </div>
             

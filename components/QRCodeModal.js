@@ -151,7 +151,7 @@ export default function QRCodeModal({ isOpen, onClose, shareUrl, userName }) {
           {/* Footer */}
           <div className="bg-gray-50 px-6 py-3">
             <p className="text-xs text-gray-500 text-center">
-              Perfect for emergency situations, doctor visits, or sharing with family
+              Perfect for emergency situations, healthcare visits, or sharing with family
             </p>
           </div>
         </div>

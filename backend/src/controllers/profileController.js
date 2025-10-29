@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 // @desc    Get user profile
 // @route   GET /api/profile
@@ -23,7 +24,11 @@ const getProfile = async (req, res) => {
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone, dateOfBirth, gender, bloodType, allergies, emergencyContact, isPublicProfile, publicFields } = req.body;
+    const { 
+      name, phone, dateOfBirth, gender, bloodType, allergies, 
+      emergencyContact, isPublicProfile, publicFields,
+      shareLinkSettings 
+    } = req.body;
 
     const user = await User.findById(req.user.userId);
 
@@ -48,10 +53,43 @@ const updateProfile = async (req, res) => {
     if (isPublicProfile !== undefined) user.isPublicProfile = isPublicProfile;
     if (publicFields !== undefined) user.publicFields = publicFields;
 
+    // Update share link settings
+    if (shareLinkSettings !== undefined) {
+      if (!user.shareLinkSettings) {
+        user.shareLinkSettings = {};
+      }
+
+      if (shareLinkSettings.accessType !== undefined) {
+        user.shareLinkSettings.accessType = shareLinkSettings.accessType;
+      }
+
+      // Hash password if provided
+      if (shareLinkSettings.password !== undefined) {
+        if (shareLinkSettings.password === '' || shareLinkSettings.password === null) {
+          // Remove password
+          user.shareLinkSettings.password = undefined;
+        } else {
+          // Hash new password
+          const salt = await bcrypt.genSalt(10);
+          user.shareLinkSettings.password = await bcrypt.hash(shareLinkSettings.password, salt);
+        }
+      }
+
+      if (shareLinkSettings.expiresAt !== undefined) {
+        user.shareLinkSettings.expiresAt = shareLinkSettings.expiresAt ? new Date(shareLinkSettings.expiresAt) : null;
+      }
+
+      // Clear access tokens when changing settings
+      if (shareLinkSettings.accessType !== undefined || shareLinkSettings.password !== undefined) {
+        user.shareLinkSettings.accessToken = undefined;
+        user.shareLinkSettings.accessTokenExpires = undefined;
+      }
+    }
+
     await user.save();
 
     // Return updated user without sensitive data
-    const updatedUser = await User.findById(req.user.userId).select('-password -emailOTP -emailOTPExpires -resetPasswordToken -resetPasswordExpires -refreshTokens');
+    const updatedUser = await User.findById(req.user.userId).select('-password -emailOTP -emailOTPExpires -resetPasswordToken -resetPasswordExpires -refreshTokens -shareLinkSettings.password');
 
     res.status(200).json({ 
       success: true, 

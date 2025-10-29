@@ -26,7 +26,7 @@ const categories = [
   { id: 'lab-results', label: 'Lab Results', icon: FileText },
   { id: 'prescriptions', label: 'Prescriptions', icon: FileText },
   { id: 'medical-images', label: 'Medical Images', icon: Image },
-  { id: 'doctor-notes', label: 'Doctor Notes', icon: FileText },
+  { id: 'medical-notes', label: 'Medical Notes', icon: FileText },
   { id: 'insurance-documents', label: 'Insurance', icon: File },
   { id: 'vaccination-records', label: 'Vaccinations', icon: FileText },
   { id: 'other', label: 'Other', icon: File }

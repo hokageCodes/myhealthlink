@@ -63,14 +63,14 @@ export default function DashboardHeader({ user, sidebarOpen, setSidebarOpen }) {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="relative w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                   {user?.profilePicture ? (
                     <Image
                       src={user.profilePicture}
                       alt={user.name || 'User'}
-                      className="w-full h-full object-cover"
                       fill
                       sizes="32px"
+                      className="object-cover"
                     />
                   ) : (
                     <User className="w-5 h-5 text-gray-600" />

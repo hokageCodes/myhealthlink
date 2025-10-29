@@ -19,6 +19,7 @@ import {
   Phone,
   LogOut,
   UserCircle,
+  Target,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
   { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
   { name: 'Health Data', href: '/dashboard/health', icon: BarChart3 },
+  { name: 'Health Goals', href: '/dashboard/health/goals', icon: Target },
   { name: 'Emergency', href: '/dashboard/emergency', icon: Shield },
   { name: 'Medications', href: '/dashboard/medications', icon: Heart },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Phone },
@@ -40,10 +42,10 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
   const pathname = usePathname();
   const logoutMutation = useLogout();
 
-  // Handle escape key
+  // Handle escape key and body scroll lock
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
@@ -52,12 +54,12 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
 
@@ -76,7 +78,7 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] md:hidden"
             onClick={onClose}
           />
 
@@ -85,8 +87,9 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 z-50 w-screen max-w-sm bg-white shadow-strong md:hidden"
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 z-[60] w-screen max-w-sm bg-white shadow-strong md:hidden"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex h-full flex-col overflow-y-auto">
               {/* Header */}
@@ -114,12 +117,14 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
               <div className="px-4 py-6">
                 <div className="bg-brand-600 rounded-xl p-4 text-white">
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                    <div className="relative w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
                       {user?.profilePicture ? (
                         <Image
                           src={user.profilePicture}
                           alt={user.name || 'User'}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="48px"
+                          className="object-cover"
                         />
                       ) : (
                         <UserCircle className="w-8 h-8 text-white" />
@@ -155,26 +160,34 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
               <nav className="flex-1 px-4">
                 <div className="space-y-1">
                   {navigation.map((item, index) => {
-                    const isActive = pathname === item.href;
+                    // Improved active state detection
+                    const isActive = item.href === '/dashboard' 
+                      ? pathname === '/dashboard'
+                      : pathname.startsWith(item.href);
                     return (
                       <motion.div
                         key={item.name}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
+                        transition={{ 
+                          delay: index * 0.03,
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 25
+                        }}
                       >
                         <Link
                           href={item.href}
                           onClick={onClose}
-                          className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+                          className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                             isActive
-                              ? 'bg-brand-100 text-brand-700'
+                              ? 'bg-brand-100 text-brand-700 shadow-sm'
                               : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                           }`}
                         >
                           <item.icon
-                            className={`mr-3 flex-shrink-0 h-5 w-5 ${
-                              isActive ? 'text-brand-500' : 'text-surface-400'
+                            className={`mr-3 flex-shrink-0 h-5 w-5 transition-colors duration-200 ${
+                              isActive ? 'text-brand-500' : 'text-surface-400 group-hover:text-surface-600'
                             }`}
                           />
                           {item.name}

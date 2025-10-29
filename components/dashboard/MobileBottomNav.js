@@ -23,16 +23,28 @@ const navigation = [
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
+  // Improved active state detection - handles exact and nested routes
+  const isActiveRoute = (href) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <motion.nav
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed bottom-3 left-3 right-3 bg-white border border-surface-200 shadow-medium rounded-2xl md:hidden z-50"
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed bottom-3 left-3 right-3 bg-white border border-surface-200 shadow-medium rounded-2xl md:hidden z-[50]"
+      style={{ 
+        paddingBottom: `max(0.75rem, env(safe-area-inset-bottom))`,
+        marginBottom: 'env(safe-area-inset-bottom)'
+      }}
     >
       <div className="flex items-center justify-around py-2 px-1">
         {navigation.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isActiveRoute(item.href);
           return (
             <Link key={item.name} href={item.href}>
               <motion.div
@@ -44,21 +56,24 @@ export default function MobileBottomNav() {
                 }`}
               >
                 <motion.div
-                  animate={{ scale: isActive ? 1.1 : 1 }}
-                  transition={{ duration: 0.2 }}
+                  animate={{ scale: isActive ? 1.15 : 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
                   <item.icon
                     size={20}
-                    className={`${
+                    className={`transition-colors duration-200 ${
                       isActive ? 'text-brand-600' : 'text-surface-400'
                     }`}
                   />
                 </motion.div>
-                <span className={`text-xs mt-1 font-medium ${
-                  isActive ? 'text-brand-600' : 'text-surface-500'
-                }`}>
+                <motion.span 
+                  className={`text-xs mt-1 font-medium transition-colors duration-200 ${
+                    isActive ? 'text-brand-600' : 'text-surface-500'
+                  }`}
+                  animate={{ opacity: isActive ? 1 : 0.7 }}
+                >
                   {item.name}
-                </span>
+                </motion.span>
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"

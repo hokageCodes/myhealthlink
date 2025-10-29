@@ -18,6 +18,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Target,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
   { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
   { name: 'Health Data', href: '/dashboard/health', icon: BarChart3 },
+  { name: 'Health Goals', href: '/dashboard/health/goals', icon: Target },
   { name: 'Emergency', href: '/dashboard/emergency', icon: Shield },
   { name: 'Medications', href: '/dashboard/medications', icon: Heart },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Phone },
@@ -44,11 +46,11 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
   };
 
   return (
-    <div className={`bg-white shadow-lg transition-all duration-300 ${
+    <div className={`bg-white shadow-lg transition-all duration-300 h-full flex flex-col ${
       sidebarOpen ? 'w-64' : 'w-16'
     }`}>
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="flex-shrink-0 p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {sidebarOpen && (
             <div className="flex items-center">
@@ -75,16 +77,16 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
 
       {/* User Profile Section */}
       {sidebarOpen && (
-        <div className="p-4 border-b border-gray-200">
+        <div className="flex-shrink-0 p-4 border-b border-gray-200">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
               {user?.profilePicture ? (
                 <Image
                   src={user.profilePicture}
                   alt={user.name || 'User'}
-                  className="w-full h-full object-cover"
                   fill
                   sizes="40px"
+                  className="object-cover"
                 />
               ) : (
                 <User className="w-6 h-6 text-gray-600" />
@@ -103,7 +105,7 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -130,7 +132,7 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
       </nav>
 
       {/* Logout Button */}
-      <div className="p-2 border-t border-gray-200">
+      <div className="flex-shrink-0 p-2 border-t border-gray-200">
         <button
           onClick={handleLogout}
           className="group flex items-center w-full px-2 py-2 text-sm font-medium text-red-600 rounded-md hover:bg-red-50 hover:text-red-700 transition-colors"

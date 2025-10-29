@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -14,6 +14,7 @@ import { authAPI } from '@/lib/api/auth';
 export default function DashboardLayout({ children }) {
   const { isAuthenticated, getToken, handleAuthError } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -58,6 +59,28 @@ export default function DashboardLayout({ children }) {
     }
   }, [isAuthenticated, isLoading, router, mounted]);
 
+  // Close drawer on route change for smooth UX
+  useEffect(() => {
+    if (mobileDrawerOpen) {
+      setMobileDrawerOpen(false);
+    }
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Register service worker for push notifications
+  useEffect(() => {
+    if (mounted && isAuthenticated && 'serviceWorker' in navigator) {
+      const registerSW = async () => {
+        try {
+          const { registerServiceWorker } = await import('@/lib/utils/pushNotifications');
+          await registerServiceWorker();
+        } catch (error) {
+          console.warn('Service worker registration failed:', error);
+        }
+      };
+      registerSW();
+    }
+  }, [mounted, isAuthenticated]);
+
   // Loading state or not mounted
   if (!mounted || isLoading) {
     return (
@@ -84,14 +107,15 @@ export default function DashboardLayout({ children }) {
     <div className="flex h-screen bg-surface-50">
       {/* Desktop Layout */}
       <div className="hidden md:flex w-full">
-        {/* Fixed Sidebar */}
+        {/* Fixed Sidebar - Full Viewport Height */}
         <motion.div
           initial={false}
           animate={{ 
             width: sidebarOpen ? 280 : 80,
             transition: { duration: 0.3, ease: 'easeInOut' }
           }}
-          className="flex-shrink-0 h-screen sticky top-0"
+          className="fixed top-0 left-0 z-30 h-screen"
+          style={{ height: '100vh' }}
         >
           <DashboardSidebar 
             user={userData} 
@@ -99,6 +123,16 @@ export default function DashboardLayout({ children }) {
             setSidebarOpen={setSidebarOpen}
           />
         </motion.div>
+        
+        {/* Spacer for fixed sidebar - matches sidebar width */}
+        <motion.div 
+          initial={false}
+          animate={{ 
+            width: sidebarOpen ? 280 : 80,
+            transition: { duration: 0.3, ease: 'easeInOut' }
+          }}
+          className="flex-shrink-0"
+        />
         
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -115,12 +149,12 @@ export default function DashboardLayout({ children }) {
           <main className="flex-1 overflow-y-auto">
             <AnimatePresence mode="wait">
               <motion.div
-                key={router.pathname}
+                key={pathname}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
-                className="p-6"
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="px-2"
               >
                 {children}
               </motion.div>
@@ -163,15 +197,15 @@ export default function DashboardLayout({ children }) {
         </motion.div>
 
         {/* Mobile Page Content */}
-        <main className="flex-1 overflow-auto pb-20">
+        <main className="flex-1 overflow-auto pb-24" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={router.pathname}
+              key={pathname}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="h-full px-2"
             >
               {children}
             </motion.div>

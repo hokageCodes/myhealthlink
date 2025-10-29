@@ -118,7 +118,8 @@ export default function ProfilePage() {
         const formData = new FormData();
         formData.append('profilePicture', file);
         
-        const response = await fetch('http://localhost:5000/api/profile/upload-picture', {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${API_URL}/profile/upload-picture`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -153,7 +154,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 mb-4">
+      <div className="lg:hidden bg-white border-b border-gray-100 px-2 -mx-2 py-4 mb-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
@@ -196,7 +197,7 @@ export default function ProfilePage() {
 
       <form onSubmit={formik.handleSubmit} className="space-y-8">
         {/* Profile Photo Section */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
+        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
           {/* Mobile Layout */}
           <div className="lg:hidden text-center">
             <div className="relative inline-block">
@@ -293,7 +294,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Basic Information */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
+        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Basic Information</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Name */}
@@ -403,7 +404,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Medical Information */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
+        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Medical Information</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Blood Type */}
@@ -462,7 +463,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Emergency Contact */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
+        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Emergency Contact</h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Emergency Contact Name */}

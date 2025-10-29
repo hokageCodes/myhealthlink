@@ -37,7 +37,8 @@ const sendOTPEmail = async (to, otp) => {
   await transporter.sendMail(mailOptions);
 };
 
-// ✅ Export both functions
+// ✅ Export functions
 module.exports = {
   sendOTPEmail,
+  createTransporter,
 };
