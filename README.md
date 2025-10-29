@@ -139,8 +139,6 @@ npm start
 npm run lint
 ```
 
-## Troubleshooting
-
 ### Email Issues
 
 If users are not receiving verification emails:
