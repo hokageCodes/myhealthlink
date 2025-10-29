@@ -115,7 +115,7 @@ export default function FAQsPage() {
         </div>
 
         <div className="mt-16 text-center">
-          <a href="/" className="text-brand-600 hover:text-brand-700 font-semibold underline">Back to home</a>
+          <Link href="/" className="text-brand-600 hover:text-brand-700 font-semibold underline">Back to home</Link>
         </div>
       </div>
     </section>

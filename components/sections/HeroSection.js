@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
@@ -37,10 +38,13 @@ export default function HeroSection() {
 
         {/* Mockup / Illustration */}
         <div className="relative mt-20">
-          <img
+          <Image
             src="https://landingfoliocom.imgix.net/store/collection/dusk/images/hero/4/dashboard-mockup.png"
             alt="Health dashboard preview"
+            width={1200}
+            height={800}
             className="w-full max-w-5xl mx-auto rounded-3xl shadow-soft"
+            unoptimized
           />
         </div>
       </div>

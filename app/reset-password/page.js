@@ -30,6 +30,7 @@ function ResetPasswordInner() {
     } else {
       router.push('/forgot-password');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router]);
 
   const validateToken = async (token) => {
