@@ -135,8 +135,7 @@ npm run build
 # Start production server
 npm start
 
-# Lint code
-npm run lint
+# Lint cod
 ```
 
 ### Email Issues
