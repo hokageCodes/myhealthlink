@@ -344,11 +344,7 @@ export default function Dashboard() {
   ];
 
   return (
-<<<<<<< HEAD
-    <div className="space-y-6">
-=======
     <div className="space-y-6 p-4 md:p-6 bg-surface-50 dark:bg-surface-900">
->>>>>>> 5b2e669ef6534aa2630048b6111ce529cdd874d1
       {/* Hero Section */}
 
 

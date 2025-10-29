@@ -36,19 +36,13 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={`${inter.variable} font-sans`}>
-<<<<<<< HEAD
-        <Providers>
-          <Navbar />
-          {children}
-          <Footer />
-        </Providers>
-=======
         <ThemeProvider>
           <Providers>
+            <Navbar />
             {children}
+            <Footer />
           </Providers>
         </ThemeProvider>
->>>>>>> 5b2e669ef6534aa2630048b6111ce529cdd874d1
       </body>
     </html>
   );
