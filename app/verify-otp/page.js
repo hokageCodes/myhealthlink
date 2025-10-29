@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, ArrowLeft, RefreshCw, Mail, Shield } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -15,7 +15,40 @@ const OTPSchema = Yup.object().shape({
     .length(6, 'Verification code must be 6 digits'),
 });
 
-export default function VerifyOTP() {
+// Loading fallback component
+function VerifyOTPLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
+      {/* Left Side - Image/Illustration */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black opacity-10"></div>
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+          <div className="text-center mb-8">
+            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
+            <h1 className="text-4xl font-bold mb-4">Verify Email</h1>
+            <p className="text-xl text-blue-100 mb-8">Complete your account setup</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Loading State */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-12 bg-gray-200 rounded"></div>
+              <div className="h-12 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main content component that uses useSearchParams
+function VerifyOTPContent() {
   const [countdown, setCountdown] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -222,5 +255,14 @@ export default function VerifyOTP() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrapper component with Suspense boundary
+export default function VerifyOTP() {
+  return (
+    <Suspense fallback={<VerifyOTPLoading />}>
+      <VerifyOTPContent />
+    </Suspense>
   );
 }

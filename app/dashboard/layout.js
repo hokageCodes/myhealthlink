@@ -10,6 +10,7 @@ import MobileBottomNav from '@/components/dashboard/MobileBottomNav';
 import MobileDrawer from '@/components/dashboard/MobileDrawer';
 import { useQuery } from '@tanstack/react-query';
 import { authAPI } from '@/lib/api/auth';
+import PWAInstallBanner, { PWAUpdateBanner } from '@/components/ui/PWAInstallBanner';
 
 export default function DashboardLayout({ children }) {
   const { isAuthenticated, getToken, handleAuthError } = useAuth();
@@ -225,6 +226,10 @@ export default function DashboardLayout({ children }) {
             />
           )}
         </AnimatePresence>
+
+        {/* PWA Banners */}
+        <PWAUpdateBanner />
+        <PWAInstallBanner />
       </div>
     </div>
   );

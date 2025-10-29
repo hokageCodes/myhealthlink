@@ -14,9 +14,8 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Health', href: '/dashboard/health', icon: Heart },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-  { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 

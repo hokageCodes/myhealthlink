@@ -158,4 +158,3 @@ export default function Calendar({ appointments = [], onDateSelect, onAppointmen
     </div>
   );
 }
-

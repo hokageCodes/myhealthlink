@@ -24,6 +24,7 @@ import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Privacy & Sharing', href: '/dashboard/privacy', icon: Shield },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
@@ -88,9 +89,8 @@ export default function DashboardSidebar({ user, sidebarOpen, setSidebarOpen }) 
                   sizes="40px"
                   className="object-cover"
                 />
-              ) : (
-                <User className="w-6 h-6 text-gray-600" />
-              )}
+              ) : null}
+              <User className="w-6 h-6 text-gray-600" style={{ display: user?.profilePicture ? 'none' : 'block' }} />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">
