@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Plus, Minus, HelpCircle } from 'lucide-react';
 
 export default function FAQsPage() {
@@ -68,13 +69,13 @@ export default function FAQsPage() {
           </div>
           <h1 className="text-4xl lg:text-5xl font-bold font-heading text-neutral-900 mb-6">
             Got questions?{' '}
-            <span className="text-brand-600">We've got answers</span>
+            <span className="text-brand-600">Weve got answers</span>
           </h1>
           <p className="text-lg text-neutral-600 leading-relaxed">
-            Everything you need to know about MyHealthLink. Can't find what you're looking for?{' '}
-            <a href="/contact" className="text-brand-600 hover:text-brand-700 font-semibold underline">
+            Everything you need to know about MyHealthLink. Cant find what you are looking for?{' '}
+            <Link href="/contact" className="text-brand-600 hover:text-brand-700 font-semibold underline">
               Chat with our team
-            </a>
+            </Link>
           </p>
         </div>
 

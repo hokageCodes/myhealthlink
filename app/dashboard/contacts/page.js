@@ -231,7 +231,7 @@ export default function ContactsPage() {
             <Phone className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">No additional contacts added yet</p>
             {!isEditing && (
-              <p className="text-sm text-gray-400 mt-2">Click "Edit Contacts" to add contacts</p>
+              <p className="text-sm text-gray-400 mt-2">Click Edit Contacts to add contacts</p>
             )}
           </div>
         ) : (

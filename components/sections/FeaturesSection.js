@@ -71,7 +71,7 @@ export default function FeaturesSection() {
           
           <p className="text-lg text-neutral-600 leading-relaxed">
             From Lagos to every corner of Nigeria, millions struggle with lost records, repeat tests, and fragmented care. 
-            We're changing that — one secure link at a time.
+            We are changing that — one secure link at a time.
           </p>
         </div>
 
