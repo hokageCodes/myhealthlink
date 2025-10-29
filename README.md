@@ -135,11 +135,6 @@ npm run build
 # Start production server
 npm start
 
-# Lint cod
-```
-
-### Email Issues
-
 If users are not receiving verification emails:
 
 1. **Test Email Configuration**:
