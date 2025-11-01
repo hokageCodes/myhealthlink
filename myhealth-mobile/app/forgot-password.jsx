@@ -1,44 +1,55 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import Toast from 'react-native-toast-message';
 import { authAPI } from '../src/api/auth';
+
+const forgotPasswordSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Please enter a valid email address')
+    .required('Email is required'),
+});
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email');
-      return;
-    }
-
-    setLoading(true);
+  const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const result = await authAPI.forgotPassword(email);
+      const result = await authAPI.forgotPassword(values.email);
       
       if (result.success) {
-        Alert.alert('Success', 'Password reset link sent to your email!', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: 'Password reset link sent to your email',
+        });
+        router.back();
       } else {
-        Alert.alert('Error', result.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message || 'Failed to send reset link',
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send reset link');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to send reset link',
+      });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -55,36 +66,48 @@ export default function ForgotPasswordScreen() {
           </Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-          </View>
+        <Formik
+          initialValues={{ email: '' }}
+          validationSchema={forgotPasswordSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={[styles.input, errors.email && touched.email && styles.inputError]}
+                  placeholder="Enter your email"
+                  value={values.email}
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                />
+                {errors.email && touched.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+              </View>
 
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Send Reset Link</Text>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Send Reset Link</Text>
+                )}
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backText}>Back to Login</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <Text style={styles.backText}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Formik>
       </View>
     </KeyboardAvoidingView>
   );
@@ -137,6 +160,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
   },
+  inputError: {
+    borderColor: '#ef4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 4,
+  },
   submitButton: {
     backgroundColor: '#16a34a',
     borderRadius: 12,
@@ -162,4 +193,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

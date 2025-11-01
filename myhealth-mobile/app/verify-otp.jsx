@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import useAuthStore from '../src/store/authStore';
 import { authAPI } from '../src/api/auth';
 
@@ -43,7 +43,11 @@ export default function VerifyOTPScreen() {
     const otpString = otp.join('');
     
     if (otpString.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit OTP');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter the complete 6-digit OTP',
+      });
       return;
     }
 
@@ -52,11 +56,55 @@ export default function VerifyOTPScreen() {
     setLoading(false);
 
     if (result.success) {
-      Alert.alert('Success', 'Email verified successfully!');
-      // User is now logged in - navigate to home
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: 'Email verified successfully',
+      });
       router.replace('/(tabs)/home');
     } else {
-      Alert.alert('Verification Failed', result.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Verification Failed',
+        text2: result.message || 'Invalid verification code',
+      });
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Email not found',
+      });
+      return;
+    }
+    
+    setResending(true);
+    try {
+      const result = await authAPI.resendOTP(email);
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Code Sent',
+          text2: 'Verification code sent to your email',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message || 'Failed to resend code',
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to resend code',
+      });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -101,25 +149,7 @@ export default function VerifyOTPScreen() {
 
       <TouchableOpacity 
         style={styles.resendContainer}
-        onPress={async () => {
-          if (!email) {
-            Alert.alert('Error', 'Email not found');
-            return;
-          }
-          setResending(true);
-          try {
-            const result = await authAPI.resendOTP(email);
-            if (result.success) {
-              Alert.alert('Success', 'Verification code sent to your email');
-            } else {
-              Alert.alert('Error', result.message);
-            }
-          } catch (error) {
-            Alert.alert('Error', 'Failed to resend code');
-          } finally {
-            setResending(false);
-          }
-        }}
+        onPress={handleResend}
         disabled={resending}
       >
         <Text style={styles.resendText}>Didn't receive code? </Text>
@@ -207,4 +237,3 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 });
-

@@ -1,71 +1,87 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import Toast from 'react-native-toast-message';
 import useAuthStore from '../src/store/authStore';
+
+const registerSchema = Yup.object().shape({
+  name: Yup.string()
+    .min(2, 'Name must be at least 2 characters')
+    .required('Full name is required'),
+  email: Yup.string()
+    .email('Please enter a valid email address')
+    .required('Email is required'),
+  phone: Yup.string()
+    .matches(/^(\+234|0)/, 'Please enter a valid Nigerian phone number')
+    .required('Phone number is required'),
+  dateOfBirth: Yup.string()
+    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Please enter a valid date (YYYY-MM-DD)')
+    .required('Date of birth is required'),
+  gender: Yup.string()
+    .oneOf(['male', 'female', 'other'], 'Please select a gender')
+    .required('Gender is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Please confirm your password'),
+});
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showGenderPicker, setShowGenderPicker] = useState(false);
   const register = useAuthStore((state) => state.register);
 
-  const handleRegister = async () => {
-    if (!name || !email || !phone || !dateOfBirth || !gender || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  const handleRegister = async (values, { setSubmitting }) => {
+    try {
+      // Format phone number
+      const formattedPhone = values.phone.startsWith('0') 
+        ? '+234' + values.phone.substring(1) 
+        : values.phone;
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+      const result = await register({
+        name: values.name,
+        email: values.email,
+        phone: formattedPhone,
+        dateOfBirth: values.dateOfBirth,
+        gender: values.gender,
+        password: values.password,
+      });
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-
-    // Validate Nigerian phone (should start with +234 or 0)
-    if (!phone.startsWith('+234') && !phone.startsWith('0')) {
-      Alert.alert('Error', 'Please enter a valid Nigerian phone number');
-      return;
-    }
-
-    setLoading(true);
-    const result = await register({
-      name,
-      email,
-      phone: phone.startsWith('0') ? '+234' + phone.substring(1) : phone,
-      dateOfBirth,
-      gender,
-      password,
-    });
-    setLoading(false);
-
-    if (result.success) {
-      Alert.alert('Success', 'Registration successful! Please verify your email.', [
-        { text: 'OK', onPress: () => router.push({ pathname: '/verify-otp', params: { email } }) },
-      ]);
-    } else {
-      Alert.alert('Registration Failed', result.message || 'An error occurred');
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Registration Successful!',
+          text2: 'Please verify your email',
+        });
+        router.push({ pathname: '/verify-otp', params: { email: values.email } });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Registration Failed',
+          text2: result.message || 'An error occurred',
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred',
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -80,126 +96,171 @@ export default function RegisterScreen() {
           <Text style={styles.subtitle}>Sign up to get started</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your full name"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-          </View>
+        <Formik
+          initialValues={{
+            name: '',
+            email: '',
+            phone: '',
+            dateOfBirth: '',
+            gender: '',
+            password: '',
+            confirmPassword: '',
+          }}
+          validationSchema={registerSchema}
+          onSubmit={handleRegister}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={[styles.input, errors.name && touched.name && styles.inputError]}
+                  placeholder="Enter your full name"
+                  value={values.name}
+                  onChangeText={handleChange('name')}
+                  onBlur={handleBlur('name')}
+                  autoCapitalize="words"
+                />
+                {errors.name && touched.name && (
+                  <Text style={styles.errorText}>{errors.name}</Text>
+                )}
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={[styles.input, errors.email && touched.email && styles.inputError]}
+                  placeholder="Enter your email"
+                  value={values.email}
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                />
+                {errors.email && touched.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Phone Number</Text>
-            <Text style={styles.hint}>Nigerian number (+234 or 0...)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., +2348012345678 or 08012345678"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoComplete="tel"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Phone Number</Text>
+                <Text style={styles.hint}>Nigerian number (+234 or 0...)</Text>
+                <TextInput
+                  style={[styles.input, errors.phone && touched.phone && styles.inputError]}
+                  placeholder="e.g., +2348012345678 or 08012345678"
+                  value={values.phone}
+                  onChangeText={handleChange('phone')}
+                  onBlur={handleBlur('phone')}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                />
+                {errors.phone && touched.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Date of Birth</Text>
-            <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 1990-01-15"
-              value={dateOfBirth}
-              onChangeText={setDateOfBirth}
-              keyboardType="default"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Date of Birth</Text>
+                <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
+                <TextInput
+                  style={[styles.input, errors.dateOfBirth && touched.dateOfBirth && styles.inputError]}
+                  placeholder="e.g., 1990-01-15"
+                  value={values.dateOfBirth}
+                  onChangeText={handleChange('dateOfBirth')}
+                  onBlur={handleBlur('dateOfBirth')}
+                  keyboardType="default"
+                />
+                {errors.dateOfBirth && touched.dateOfBirth && (
+                  <Text style={styles.errorText}>{errors.dateOfBirth}</Text>
+                )}
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.genderContainer}>
-              {['male', 'female', 'other'].map((g) => (
-                <TouchableOpacity
-                  key={g}
-                  style={[
-                    styles.genderButton,
-                    gender === g && styles.genderButtonActive,
-                  ]}
-                  onPress={() => setGender(g)}
-                >
-                  <Text
-                    style={[
-                      styles.genderButtonText,
-                      gender === g && styles.genderButtonTextActive,
-                    ]}
-                  >
-                    {g.charAt(0).toUpperCase() + g.slice(1)}
-                  </Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Gender</Text>
+                <View style={styles.genderContainer}>
+                  {['male', 'female', 'other'].map((g) => (
+                    <TouchableOpacity
+                      key={g}
+                      style={[
+                        styles.genderButton,
+                        values.gender === g && styles.genderButtonActive,
+                      ]}
+                      onPress={() => {
+                        handleChange('gender')(g);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.genderButtonText,
+                          values.gender === g && styles.genderButtonTextActive,
+                        ]}
+                      >
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {errors.gender && touched.gender && (
+                  <Text style={styles.errorText}>{errors.gender}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={[styles.input, errors.password && touched.password && styles.inputError]}
+                  placeholder="Create a password (min 6 characters)"
+                  value={values.password}
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                />
+                {errors.password && touched.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={[styles.input, errors.confirmPassword && touched.confirmPassword && styles.inputError]}
+                  placeholder="Confirm your password"
+                  value={values.confirmPassword}
+                  onChangeText={handleChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                />
+                {errors.confirmPassword && touched.confirmPassword && (
+                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.registerButton, isSubmitting && styles.registerButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.registerButtonText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => router.push('/login')}>
+                  <Text style={styles.loginLink}>Sign In</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
             </View>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Create a password (min 6 characters)"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password-new"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password-new"
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.registerButton, loading && styles.registerButtonDisabled]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.registerButtonText}>Sign Up</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/login')}>
-              <Text style={styles.loginLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          )}
+        </Formik>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -256,6 +317,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: '#111827',
+  },
+  inputError: {
+    borderColor: '#ef4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 4,
   },
   genderContainer: {
     flexDirection: 'row',

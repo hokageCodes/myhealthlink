@@ -1,40 +1,58 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import Toast from 'react-native-toast-message';
 import useAuthStore from '../src/store/authStore';
+
+const loginSchema = Yup.object().shape({
+  emailOrPhone: Yup.string()
+    .required('Email or phone number is required'),
+  password: Yup.string()
+    .required('Password is required'),
+});
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
 
-  const handleLogin = async () => {
-    if (!emailOrPhone || !password) {
-      Alert.alert('Error', 'Please enter your email/phone and password');
-      return;
-    }
-
-    setLoading(true);
-    const result = await login(emailOrPhone, password);
-    setLoading(false);
-
-    if (result.success) {
-      router.replace('/(tabs)/home');
-    } else {
-      Alert.alert('Login Failed', result.message);
+  const handleLogin = async (values, { setSubmitting }) => {
+    try {
+      const result = await login(values.emailOrPhone, values.password);
+      
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome back!',
+          text2: 'You have successfully logged in',
+        });
+        router.replace('/(tabs)/home');
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: result.message || 'Invalid credentials',
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred',
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -49,59 +67,75 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>Sign in to your account</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email or Phone</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email or phone"
-              value={emailOrPhone}
-              onChangeText={setEmailOrPhone}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-          </View>
+        <Formik
+          initialValues={{ emailOrPhone: '', password: '' }}
+          validationSchema={loginSchema}
+          onSubmit={handleLogin}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email or Phone</Text>
+                <TextInput
+                  style={[styles.input, errors.emailOrPhone && touched.emailOrPhone && styles.inputError]}
+                  placeholder="Enter your email or phone"
+                  value={values.emailOrPhone}
+                  onChangeText={handleChange('emailOrPhone')}
+                  onBlur={handleBlur('emailOrPhone')}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                />
+                {errors.emailOrPhone && touched.emailOrPhone && (
+                  <Text style={styles.errorText}>{errors.emailOrPhone}</Text>
+                )}
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={[styles.input, errors.password && touched.password && styles.inputError]}
+                  placeholder="Enter your password"
+                  value={values.password}
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password"
+                />
+                {errors.password && touched.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
 
-          <TouchableOpacity
-            style={styles.forgotButton}
-            onPress={() => router.push('/forgot-password')}
-          >
-            <Text style={styles.forgotText}>Forgot Password?</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.forgotButton}
+                onPress={() => router.push('/forgot-password')}
+              >
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Sign In</Text>
+                )}
+              </TouchableOpacity>
 
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/register')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <View style={styles.signupContainer}>
+                <Text style={styles.signupText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => router.push('/register')}>
+                  <Text style={styles.signupLink}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Formik>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -153,6 +187,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: '#111827',
+  },
+  inputError: {
+    borderColor: '#ef4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 4,
   },
   forgotButton: {
     alignSelf: 'flex-end',
