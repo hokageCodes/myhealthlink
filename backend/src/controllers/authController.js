@@ -297,7 +297,8 @@ const login = async (req, res) => {
           isEmailVerified: user.isEmailVerified,
           isPhoneVerified: user.isPhoneVerified
         },
-        accessToken
+        accessToken,
+        refreshToken // Include refresh token in response for mobile apps
       }
     });
 
@@ -445,7 +446,8 @@ const verifyOTP = async (req, res) => {
           isEmailVerified: user.isEmailVerified,
           isPhoneVerified: user.isPhoneVerified
         },
-        accessToken
+        accessToken,
+        refreshToken // Include refresh token in response for mobile apps
       }
     });
 

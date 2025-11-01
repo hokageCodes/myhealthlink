@@ -46,7 +46,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps, React Native, or curl requests)
     if (!origin) return callback(null, true);
     
     // Check if origin is in allowed list
@@ -56,8 +56,11 @@ app.use(cors({
       // In development, allow localhost on any port
       if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
         callback(null, true);
-      } else {
+      } else if (process.env.NODE_ENV === 'production') {
         callback(new Error('Not allowed by CORS'));
+      } else {
+        // In development, allow all origins (for mobile app testing)
+        callback(null, true);
       }
     }
   },
