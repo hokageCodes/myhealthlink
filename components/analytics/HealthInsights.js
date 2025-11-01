@@ -69,50 +69,8 @@ const HealthInsights = ({ insights = [] }) => {
     }
   };
 
-  // Default insights if none provided
-  const defaultInsights = [
-    {
-      id: 1,
-      type: 'achievement',
-      title: 'Great Progress!',
-      description: 'You\'ve maintained your exercise routine for 7 consecutive days.',
-      priority: 'high',
-      timestamp: '2 hours ago',
-      actionable: true,
-      actionText: 'Keep it up!'
-    },
-    {
-      id: 2,
-      type: 'tip',
-      title: 'Hydration Tip',
-      description: 'You\'re drinking 20% less water than recommended. Try setting hourly reminders.',
-      priority: 'medium',
-      timestamp: '1 day ago',
-      actionable: true,
-      actionText: 'Set Reminder'
-    },
-    {
-      id: 3,
-      type: 'trend',
-      title: 'Sleep Quality Improving',
-      description: 'Your sleep quality has improved by 15% over the past week.',
-      priority: 'low',
-      timestamp: '3 days ago',
-      actionable: false
-    },
-    {
-      id: 4,
-      type: 'recommendation',
-      title: 'New Goal Suggestion',
-      description: 'Based on your activity level, consider adding 30 minutes of cardio.',
-      priority: 'medium',
-      timestamp: '5 days ago',
-      actionable: true,
-      actionText: 'Add Goal'
-    }
-  ];
-
-  const insightsToShow = insights.length > 0 ? insights : defaultInsights;
+  // Use only real insights from props
+  const insightsToShow = insights;
 
   return (
     <motion.div
@@ -130,7 +88,8 @@ const HealthInsights = ({ insights = [] }) => {
       </div>
 
       <div className="space-y-4">
-        {insightsToShow.map((insight, index) => (
+        {insightsToShow && insightsToShow.length > 0 ? (
+          insightsToShow.map((insight, index) => (
           <motion.div
             key={insight.id}
             initial={{ opacity: 0, x: -20 }}
@@ -159,23 +118,31 @@ const HealthInsights = ({ insights = [] }) => {
               </motion.button>
             )}
           </motion.div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <Lightbulb className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className="text-sm text-gray-500">No health insights available yet</p>
+          </div>
+        )}
       </div>
 
       {/* Insight Summary */}
-      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Star className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-surface-900">Weekly Summary</h4>
-            <p className="text-sm text-surface-600">
-              You have received {insightsToShow.length} insights this week. Keep up the great work!
-            </p>
+      {insightsToShow && insightsToShow.length > 0 && (
+        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Star className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-surface-900">Weekly Summary</h4>
+              <p className="text-sm text-surface-600">
+                You have received {insightsToShow.length} insights this week. Keep up the great work!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 };

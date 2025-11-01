@@ -155,12 +155,19 @@ const verifySharePassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ username }).select('shareLinkSettings');
+    const user = await User.findOne({ username }).select('shareLinkSettings isPublicProfile');
 
-    if (!user || !user.isPublicProfile) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+    
+    if (!user.isPublicProfile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile is not public'
       });
     }
 
@@ -229,12 +236,19 @@ const requestShareOTP = async (req, res) => {
     const { username } = req.params;
     const { email } = req.body; // Optional: email to send OTP to
 
-    const user = await User.findOne({ username }).select('shareLinkSettings email name');
+    const user = await User.findOne({ username }).select('shareLinkSettings email name isPublicProfile');
 
-    if (!user || !user.isPublicProfile) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+    
+    if (!user.isPublicProfile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile is not public'
       });
     }
 
@@ -297,12 +311,19 @@ const verifyShareOTP = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ username }).select('shareLinkSettings');
+    const user = await User.findOne({ username }).select('shareLinkSettings isPublicProfile');
 
-    if (!user || !user.isPublicProfile) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+    
+    if (!user.isPublicProfile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile is not public'
       });
     }
 

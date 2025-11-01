@@ -70,6 +70,10 @@ const userSchema = new mongoose.Schema({
     relationship: {
       type: String,
       maxlength: [30, 'Relationship cannot exceed 30 characters']
+    },
+    linkedUsername: {
+      type: String,
+      sparse: true // Allow null values, but ensure uniqueness when present
     }
   },
   

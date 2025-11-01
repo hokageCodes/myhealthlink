@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Heart, ArrowLeft, Mail, Lock, Shield } from 'lucide-react';
+import { Heart, ArrowLeft, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
@@ -48,18 +49,18 @@ export default function ForgotPassword() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-neutral-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Mail className="h-8 w-8 text-green-600" />
             </div>
             
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-4">
               Check Your Email
             </h1>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-neutral-600 mb-6">
               Weve sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.
             </p>
             
@@ -85,69 +86,32 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
-      {/* Left Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
-          <div className="text-center mb-8">
-            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
-            <h1 className="text-4xl font-bold mb-4">Reset Password</h1>
-            <p className="text-xl text-blue-100 mb-8">We will help you get back into your account</p>
-          </div>
-          
-          <div className="space-y-6 max-w-md">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Mail className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Email Verification</h3>
-                <p className="text-blue-100 text-sm">We will send a reset link to your email</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Shield className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Secure Process</h3>
-                <p className="text-blue-100 text-sm">Your account remains protected</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Lock className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Quick Reset</h3>
-                <p className="text-blue-100 text-sm">Get back to your health data quickly</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute bottom-20 left-20 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute top-1/2 right-10 w-16 h-16 bg-white bg-opacity-10 rounded-full"></div>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-neutral-100">
+        <Image
+          src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2064&q=80"
+          alt="Password reset"
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto w-full">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-8 lg:px-12 xl:px-16 bg-white">
+        <div className="max-w-lg mx-auto w-full">
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">MyHealthLink</span>
+              <Heart className="h-8 w-8 text-brand-600" />
+              <span className="text-2xl font-bold text-neutral-900">MyHealthLink</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
               Forgot Password?
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               No worries, we will send you reset instructions
             </p>
           </div>
@@ -156,29 +120,29 @@ export default function ForgotPassword() {
           <div className="hidden lg:block mb-8">
             <Link 
               href="/login" 
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+              className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-6"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Login
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">
               Forgot Password?
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               No worries, we will send you reset instructions
             </p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-10 lg:p-12">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-base font-semibold text-neutral-900 mb-3">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                   <input
                     type="email"
                     id="email"
@@ -189,7 +153,7 @@ export default function ForgotPassword() {
                         message: 'Please enter a valid email address'
                       }
                     })}
-                    className="input w-full pl-10"
+                    className="input w-full pl-11 py-3.5 text-base border-neutral-300 focus:border-brand-500 focus:ring-brand-500"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -202,7 +166,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary w-full py-3 text-lg font-semibold"
+                className="btn btn-primary w-full py-4 text-base font-semibold mt-8"
               >
                 {isLoading ? 'Sending...' : 'Send Reset Link'}
               </button>
@@ -210,9 +174,9 @@ export default function ForgotPassword() {
 
             {/* Login Link */}
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-neutral-600">
                 Remember your password?{' '}
-                <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                <Link href="/login" className="text-brand-600 hover:text-brand-700 font-medium">
                   Sign in here
                 </Link>
               </p>

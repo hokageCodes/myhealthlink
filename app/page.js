@@ -12,7 +12,7 @@ export default function Home() {
   const [showFeatures, setShowFeatures] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-20 lg:pt-24">
+    <div className="min-h-screen pt-20 lg:pt-24">
       <HeroSection onToggleFeatures={() => setShowFeatures(!showFeatures)} />
       <FeaturesSection />
       <HowItWorksSection showFeatures={showFeatures} />

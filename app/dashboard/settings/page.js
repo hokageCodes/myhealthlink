@@ -31,14 +31,9 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('account');
 
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = getToken();
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   const [settings, setSettings] = useState({
     notifications: {

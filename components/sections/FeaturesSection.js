@@ -55,7 +55,7 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-white">
+    <section className="py-12 lg:py-16 bg-white">
       <div className="container mx-auto px-4 lg:px-6">
         
         {/* Section Header */}
@@ -65,12 +65,12 @@ export default function FeaturesSection() {
           </div> */}
           
           <h2 className="text-4xl lg:text-5xl font-semibold font-heading text-neutral-900 mb-6">
-            Your health story deserves better than{' '}
+            Vital Information deserves better than{' '}
             <span className="text-brand-600">scattered folders</span>
           </h2>
           
           <p className="text-lg text-neutral-600 leading-relaxed">
-            From Lagos to every corner of Nigeria, millions struggle with lost records, repeat tests, and fragmented care. 
+            millions struggle with lost records, repeat tests, and fragmented care. 
             We are changing that — one secure link at a time.
           </p>
         </div>

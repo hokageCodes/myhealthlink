@@ -39,25 +39,9 @@ const AppointmentForm = ({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sample doctors data
-  const defaultDoctors = [
-    { id: 1, name: 'Dr. Sarah Johnson', specialization: 'General Medicine', available: true },
-    { id: 2, name: 'Dr. Michael Smith', specialization: 'Cardiology', available: true },
-    { id: 3, name: 'Dr. Emily Davis', specialization: 'Dermatology', available: false },
-    { id: 4, name: 'Dr. Robert Wilson', specialization: 'Orthopedics', available: true },
-  ];
-
-  // Sample locations data
-  const defaultLocations = [
-    'Main Hospital - Building A',
-    'Health Center - Downtown',
-    'Clinic - Westside',
-    'Emergency Department',
-    'Lab Building - Floor 2'
-  ];
-
-  const doctorsToShow = doctors.length > 0 ? doctors : defaultDoctors;
-  const locationsToShow = locations.length > 0 ? locations : defaultLocations;
+  // Use only real data from props
+  const doctorsToShow = doctors;
+  const locationsToShow = locations;
 
   const appointmentTypes = [
     { value: 'checkup', label: 'General Checkup', icon: Stethoscope, color: 'text-green-600' },

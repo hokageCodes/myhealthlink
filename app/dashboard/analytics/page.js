@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -11,97 +12,118 @@ import {
   Download,
   RefreshCw,
   Eye,
-  Settings
+  Settings,
+  Target
 } from 'lucide-react';
 import HealthChart from '@/components/analytics/HealthChart';
 import TrendAnalysis from '@/components/analytics/TrendAnalysis';
 import HealthInsights from '@/components/analytics/HealthInsights';
 import HealthMetrics from '@/components/analytics/HealthMetrics';
+import { healthAPI } from '@/lib/api/health';
 
 export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
   const [selectedMetric, setSelectedMetric] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
+  // Fetch health metrics data
+  const { data: healthMetrics, isLoading, error, refetch } = useQuery({
+    queryKey: ['analytics-health', selectedPeriod],
+    queryFn: async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('No token');
+      return await healthAPI.getMetrics(token, { period: selectedPeriod, limit: 30 });
+    },
+    staleTime: 30000,
+    retry: false,
+  });
+
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    setTimeout(() => setIsRefreshing(false), 2000);
+    await refetch();
+    setIsRefreshing(false);
   };
 
-  // Sample chart data
-  const chartData = {
-    heartRate: [
-      { label: 'Mon', value: 72 },
-      { label: 'Tue', value: 75 },
-      { label: 'Wed', value: 70 },
-      { label: 'Thu', value: 73 },
-      { label: 'Fri', value: 68 },
-      { label: 'Sat', value: 71 },
-      { label: 'Sun', value: 74 }
-    ],
-    steps: [
-      { label: 'Mon', value: 8500 },
-      { label: 'Tue', value: 9200 },
-      { label: 'Wed', value: 7800 },
-      { label: 'Thu', value: 10500 },
-      { label: 'Fri', value: 8800 },
-      { label: 'Sat', value: 12000 },
-      { label: 'Sun', value: 9500 }
-    ],
-    sleep: [
-      { label: 'Mon', value: 7.5 },
-      { label: 'Tue', value: 8.0 },
-      { label: 'Wed', value: 7.0 },
-      { label: 'Thu', value: 8.5 },
-      { label: 'Fri', value: 7.8 },
-      { label: 'Sat', value: 9.0 },
-      { label: 'Sun', value: 8.2 }
-    ]
-  };
-
-  // Sample trend data
-  const trendData = [
-    {
-      name: 'Heart Rate',
-      description: 'Average resting heart rate',
-      value: '72 BPM',
-      trend: 'stable',
-      change: 0,
-      isPositive: true,
-      type: 'heart'
-    },
-    {
-      name: 'Daily Steps',
-      description: 'Average steps per day',
-      value: '9,200',
-      trend: 'up',
-      change: 8,
-      isPositive: true,
-      type: 'activity'
-    },
-    {
-      name: 'Sleep Quality',
-      description: 'Average sleep duration',
-      value: '7.8h',
-      trend: 'up',
-      change: 12,
-      isPositive: true,
-      type: 'energy'
-    },
-    {
-      name: 'Hydration',
-      description: 'Daily water intake',
-      value: '1.8L',
-      trend: 'down',
-      change: 15,
-      isPositive: false,
-      type: 'alert'
+  // Process metrics into chart data
+  const processChartData = (metrics) => {
+    if (!metrics || metrics.length === 0) {
+      return {
+        heartRate: [],
+        steps: [],
+        sleep: []
+      };
     }
-  ];
+
+    // Group by type
+    const heartRate = metrics.filter(m => m.type === 'heart-rate');
+    const steps = metrics.filter(m => m.type === 'steps');
+    const sleep = metrics.filter(m => m.type === 'sleep');
+
+    const formatChartData = (data) => {
+      return data.slice(0, 7).map((item, index) => ({
+        label: new Date(item.recordedAt || item.createdAt).toLocaleDateString('en-US', { weekday: 'short' }),
+        value: parseFloat(item.value?.numeric || item.value || 0)
+      }));
+    };
+
+    return {
+      heartRate: formatChartData(heartRate),
+      steps: formatChartData(steps),
+      sleep: formatChartData(sleep)
+    };
+  };
+
+  // Process trend data
+  const processTrendData = (metrics) => {
+    if (!metrics || metrics.length === 0) {
+      return [];
+    }
+
+    // Group by type and calculate averages and trends
+    const grouped = metrics.reduce((acc, m) => {
+      if (!acc[m.type]) acc[m.type] = [];
+      acc[m.type].push(m);
+      return acc;
+    }, {});
+
+    const trends = Object.entries(grouped).map(([type, data]) => {
+      const sorted = data.sort((a, b) => new Date(b.recordedAt || b.createdAt) - new Date(a.recordedAt || a.createdAt));
+      const recent = sorted.slice(0, 7);
+      const older = sorted.slice(7, 14);
+      
+      const recentAvg = recent.reduce((sum, m) => sum + parseFloat(m.value?.numeric || m.value || 0), 0) / recent.length;
+      const olderAvg = older.length > 0 ? older.reduce((sum, m) => sum + parseFloat(m.value?.numeric || m.value || 0), 0) / older.length : recentAvg;
+      
+      const change = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg * 100).toFixed(0) : 0;
+      const trend = change > 5 ? 'up' : change < -5 ? 'down' : 'stable';
+
+      const typeMapping = {
+        'heart-rate': { name: 'Heart Rate', desc: 'Average resting heart rate', icon: 'heart', unit: ' BPM' },
+        'steps': { name: 'Daily Steps', desc: 'Average steps per day', icon: 'activity', unit: '' },
+        'sleep': { name: 'Sleep Quality', desc: 'Average sleep duration', icon: 'energy', unit: 'h' }
+      };
+
+      const mapping = typeMapping[type] || { name: type, desc: type, icon: 'heart', unit: '' };
+      
+      return {
+        name: mapping.name,
+        description: mapping.desc,
+        value: `${recentAvg.toFixed(0)}${mapping.unit}`,
+        trend,
+        change: Math.abs(change),
+        isPositive: trend === 'up' || trend === 'stable',
+        type: mapping.icon
+      };
+    });
+
+    return trends;
+  };
+
+  const chartData = processChartData(healthMetrics);
+  const trendData = processTrendData(healthMetrics);
 
   return (
-    <div className="space-y-6 p-4 md:p-6 bg-surface-50 dark:bg-surface-900">
+    <div className="space-y-6 bg-white dark:bg-surface-900">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -123,7 +145,7 @@ export default function AnalyticsPage() {
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -135,7 +157,7 @@ export default function AnalyticsPage() {
           <select
             value={selectedMetric}
             onChange={(e) => setSelectedMetric(e.target.value)}
-            className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="all">All Metrics</option>
             <option value="heart">Heart Rate</option>
@@ -150,7 +172,7 @@ export default function AnalyticsPage() {
             whileTap={{ scale: 0.95 }}
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-2 border border-surface-300 rounded-lg hover:bg-surface-50 transition-colors disabled:opacity-50"
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </motion.button>
@@ -159,7 +181,7 @@ export default function AnalyticsPage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Download className="w-4 h-4" />
             <span className="text-sm">Export</span>
@@ -174,31 +196,60 @@ export default function AnalyticsPage() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-4 gap-4"
       >
-        {[
-          { title: 'Avg Heart Rate', value: '72 BPM', change: '+2%', icon: Activity, color: 'text-red-500' },
-          { title: 'Daily Steps', value: '9,200', change: '+8%', icon: TrendingUp, color: 'text-blue-500' },
-          { title: 'Sleep Score', value: '85%', change: '+12%', icon: BarChart3, color: 'text-green-500' },
-          { title: 'Health Score', value: '78%', change: '+5%', icon: Eye, color: 'text-purple-500' }
-        ].map((stat, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 + index * 0.1 }}
-            className="bg-white dark:bg-surface-800 rounded-xl p-4 border border-surface-200 dark:border-surface-700"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color} bg-opacity-10`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+        {isLoading ? (
+          <>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white rounded-xl p-4 border border-surface-200 animate-pulse">
+                <div className="h-20 bg-gray-200 rounded"></div>
               </div>
-              <span className="text-sm text-green-600 font-medium">{stat.change}</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-surface-900 dark:text-white">{stat.value}</h3>
-              <p className="text-sm text-surface-600 dark:text-surface-400">{stat.title}</p>
-            </div>
-          </motion.div>
-        ))}
+            ))}
+          </>
+        ) : trendData.length > 0 ? (
+          trendData.slice(0, 4).map((stat, index) => {
+            const icons = {
+              heart: Activity,
+              activity: TrendingUp,
+              energy: BarChart3,
+              alert: Eye
+            };
+            const StatIcon = icons[stat.type] || Activity;
+            const colors = {
+              heart: 'text-red-500',
+              activity: 'text-blue-500',
+              energy: 'text-green-500',
+              alert: 'text-purple-500'
+            };
+            const color = colors[stat.type] || 'text-blue-500';
+            
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + index * 0.1 }}
+                className="bg-white rounded-xl p-4 border border-gray-200 hover:border-green-300 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-50">
+                    <StatIcon className="w-5 h-5 text-green-600" />
+                  </div>
+                  <span className={`text-sm font-medium ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {stat.change > 0 && stat.isPositive ? '+' : ''}{stat.change}%
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">{stat.value}</h3>
+                  <p className="text-sm text-gray-600">{stat.name}</p>
+                </div>
+              </motion.div>
+            );
+          })
+        ) : (
+          <div className="col-span-4 text-center py-8 text-gray-500">
+            <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+            <p>No analytics data available. Start tracking your health metrics to see insights.</p>
+          </div>
+        )}
       </motion.div>
 
       {/* Charts Grid */}
@@ -249,31 +300,28 @@ export default function AnalyticsPage() {
             title: 'Set Health Goals',
             description: 'Create personalized health targets',
             icon: Target,
-            color: 'bg-blue-600',
             href: '/dashboard/goals'
           },
           {
             title: 'Schedule Checkup',
             description: 'Book your next health appointment',
             icon: Calendar,
-            color: 'bg-green-600',
             href: '/dashboard/appointments'
           },
           {
             title: 'Export Report',
             description: 'Download your health data',
             icon: Download,
-            color: 'bg-purple-600',
             href: '/dashboard/export'
           }
         ].map((action, index) => (
           <motion.div
             key={index}
             whileHover={{ y: -2 }}
-            className="bg-white dark:bg-surface-800 rounded-xl p-6 border border-surface-200 dark:border-surface-700 hover:shadow-lg transition-shadow cursor-pointer"
+            className="bg-white dark:bg-surface-800 rounded-xl p-6 border border-gray-200 dark:border-surface-700 hover:border-green-300 hover:shadow-lg transition-all cursor-pointer group"
           >
-            <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mb-4`}>
-              <action.icon className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-200 transition-colors">
+              <action.icon className="w-6 h-6 text-green-600" />
             </div>
             <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-2">
               {action.title}

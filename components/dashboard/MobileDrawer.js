@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ import {
   LogOut,
   UserCircle,
   Target,
+  Pill,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -29,10 +30,10 @@ const navigation = [
   { name: 'Privacy & Sharing', href: '/dashboard/privacy', icon: Shield },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
   { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-  { name: 'Health Data', href: '/dashboard/health', icon: BarChart3 },
+  { name: 'Health Data', href: '/dashboard/health', icon: Heart },
   { name: 'Health Goals', href: '/dashboard/health/goals', icon: Target },
   { name: 'Emergency', href: '/dashboard/emergency', icon: Shield },
-  { name: 'Medications', href: '/dashboard/medications', icon: Heart },
+  { name: 'Medications', href: '/dashboard/medications', icon: Pill },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Phone },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
@@ -41,6 +42,7 @@ const navigation = [
 export default function MobileDrawer({ user, isOpen, onClose }) {
   const pathname = usePathname();
   const logoutMutation = useLogout();
+  const [imageError, setImageError] = useState(false);
 
   // Handle escape key and body scroll lock
   useEffect(() => {
@@ -62,6 +64,13 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  // Reset image error state when drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      setImageError(false);
+    }
+  }, [isOpen]);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -118,23 +127,19 @@ export default function MobileDrawer({ user, isOpen, onClose }) {
                 <div className="bg-brand-600 rounded-xl p-4 text-white">
                   <div className="flex items-center mb-4">
                     <div className="relative w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-                      {user?.profilePicture ? (
+                      {user?.profilePicture && !imageError ? (
                         <Image
                           src={user.profilePicture}
                           alt={user.name || 'User'}
-                          width={48}
-                          height={48}
                           fill
                           sizes="48px"
                           className="object-cover"
                           unoptimized
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
+                          onError={() => setImageError(true)}
                         />
-                      ) : null}
-                      <UserCircle className="w-8 h-8 text-white" style={{ display: user?.profilePicture ? 'none' : 'block' }} />
+                      ) : (
+                        <UserCircle className="w-8 h-8 text-white" />
+                      )}
                     </div>
                     <div className="ml-3">
                       <h3 className="text-lg font-semibold">

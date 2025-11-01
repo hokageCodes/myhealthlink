@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { 
@@ -25,18 +25,12 @@ import QRCodeModal from '@/components/QRCodeModal';
 export default function PrivacyPage() {
   const [copied, setCopied] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
   const queryClient = useQueryClient();
 
-  // Fetch user privacy settings
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-    staleTime: Infinity,
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   // Update privacy settings mutation
   const updatePrivacyMutation = useMutation({
@@ -68,16 +62,27 @@ export default function PrivacyPage() {
   const handlePublicToggle = () => {
     updatePrivacyMutation.mutate({
       isPublicProfile: !userData?.isPublicProfile
+    }, {
+      onSuccess: () => {
+        // Auto-advance to next step when public profile is enabled
+        if (!userData?.isPublicProfile) {
+          setTimeout(() => setActiveStep(2), 500);
+        }
+      }
     });
   };
 
-  const handleShareLinkSettingsUpdate = (settings) => {
-    updatePrivacyMutation.mutate({
-      shareLinkSettings: {
-        ...userData?.shareLinkSettings,
-        ...settings
-      }
-    });
+  const handleShareLinkSettingsUpdate = async (settings) => {
+    try {
+      await updatePrivacyMutation.mutateAsync({
+        shareLinkSettings: {
+          ...userData?.shareLinkSettings,
+          ...settings
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
   };
 
   const copyShareLink = async () => {
@@ -102,37 +107,97 @@ export default function PrivacyPage() {
 
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${userData?.username}`;
 
+  console.log('Privacy Page - User Data:', {
+    username: userData?.username,
+    isPublicProfile: userData?.isPublicProfile,
+    shareLinkSettings: userData?.shareLinkSettings,
+    shareUrl
+  });
+
+  const steps = [
+    { number: 1, title: 'Enable Sharing', icon: Shield },
+    { number: 2, title: 'Link Settings', icon: Link },
+    { number: 3, title: 'What to Share', icon: Eye },
+  ];
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-light text-gray-900">Privacy & Sharing</h1>
-          <p className="text-gray-500 mt-1">Control what information you share publicly</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Privacy & Sharing</h1>
+        <p className="text-gray-600 mt-2">Control what information you share publicly</p>
       </div>
 
-      {/* Public Profile Toggle */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      {/* Progress Steps */}
+      {userData?.isPublicProfile && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = activeStep === step.number;
+              const isCompleted = activeStep > step.number;
+              
+              return (
+                <div key={step.number} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={() => setActiveStep(step.number)}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                        isActive 
+                          ? 'bg-green-600 text-white shadow-lg' 
+                          : isCompleted 
+                          ? 'bg-green-100 text-green-600' 
+                          : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </button>
+                    <span className={`text-xs mt-2 font-medium ${
+                      isActive ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-2 ${
+                      isCompleted ? 'bg-green-600' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Step 1: Enable Sharing */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Shield className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+              <Shield className="w-6 h-6 text-green-600" />
+            </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Public Profile</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-semibold text-gray-900">Public Profile</h3>
+              <p className="text-sm text-gray-600">
                 Allow others to view your health information via a public link
               </p>
+              {!userData?.isPublicProfile && (
+                <p className="text-xs text-green-600 mt-1 font-medium">
+                  ⚠️ Toggle ON to get started
+                </p>
+              )}
             </div>
           </div>
           <button
             onClick={handlePublicToggle}
             disabled={updatePrivacyMutation.isPending}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              userData?.isPublicProfile ? 'bg-blue-600' : 'bg-gray-200'
-            }`}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+              updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+            } ${userData?.isPublicProfile ? 'bg-green-600' : 'bg-gray-200'}`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
                 userData?.isPublicProfile ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
@@ -140,18 +205,29 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      {/* Share Link */}
-      {userData?.isPublicProfile && (
-        <>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Your Share Link</h3>
+      {/* Step 2: Share Link Settings */}
+      {userData?.isPublicProfile && activeStep >= 2 && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <Link className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Your Share Link</h3>
+                <p className="text-sm text-gray-600">Copy or share this link</p>
+              </div>
+            </div>
             <div className="flex items-center space-x-3">
-              <div className="flex-1 bg-gray-50 rounded-lg p-3 border">
-                <p className="text-sm text-gray-600 font-mono break-all">{shareUrl}</p>
+              <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-sm text-gray-700 font-mono break-all">{shareUrl}</p>
               </div>
               <button
                 onClick={copyShareLink}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={!userData?.isPublicProfile || updatePrivacyMutation.isPending}
+                className={`flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md ${
+                  (!userData?.isPublicProfile || updatePrivacyMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -161,10 +237,18 @@ export default function PrivacyPage() {
               Share this link with healthcare providers, emergency contacts, or anyone who needs access to your health information.
             </p>
           </div>
-
+          
           {/* Share Link Security Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Link Security Settings</h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <Lock className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Link Security Settings</h3>
+                <p className="text-sm text-gray-600">Control who can access your profile</p>
+              </div>
+            </div>
             
             {/* Access Type Selection */}
             <div className="mb-6">
@@ -174,20 +258,26 @@ export default function PrivacyPage() {
               <select
                 value={userData?.shareLinkSettings?.accessType || 'public'}
                 onChange={(e) => handleShareLinkSettingsUpdate({ accessType: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={updatePrivacyMutation.isPending}
+                className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                  updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <option value="public">Public (No protection)</option>
                 <option value="password">Password Protected</option>
                 <option value="otp">OTP Protected</option>
                 <option value="none">Disabled</option>
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Choose <strong>Password Protected</strong> to share a password with viewers
+              </p>
             </div>
 
             {/* Password Protection */}
             {userData?.shareLinkSettings?.accessType === 'password' && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center mb-3">
-                  <Lock className="w-5 h-5 text-blue-600 mr-2" />
+                  <Lock className="w-5 h-5 text-green-600 mr-2" />
                   <h4 className="font-medium text-gray-900">Password Protection</h4>
                 </div>
                 <PasswordInput 
@@ -237,7 +327,10 @@ export default function PrivacyPage() {
                   
                   handleShareLinkSettingsUpdate({ expiresAt });
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={updatePrivacyMutation.isPending}
+                className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                  updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <option value="never">Never expires</option>
                 <option value="7days">Expires in 7 days</option>
@@ -269,35 +362,43 @@ export default function PrivacyPage() {
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
-      {/* Privacy Controls */}
-      {userData?.isPublicProfile && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">What to Share</h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Choose which information is visible on your public profile:
-          </p>
+      {/* Step 3: What to Share */}
+      {userData?.isPublicProfile && activeStep >= 3 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+              <Eye className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">What to Share</h3>
+              <p className="text-sm text-gray-600">Choose which information is visible</p>
+            </div>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Blood Type */}
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <div className="flex items-center space-x-3">
-                <Heart className="w-5 h-5 text-red-500" />
+                <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-red-600" />
+                </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Blood Type</h4>
+                  <h4 className="font-semibold text-gray-900">Blood Type</h4>
                   <p className="text-sm text-gray-500">Essential for emergency situations</p>
                 </div>
               </div>
               <button
                 onClick={() => handleFieldToggle('bloodType')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  userData?.publicFields?.includes('bloodType') ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                disabled={updatePrivacyMutation.isPending}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                  updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+                } ${userData?.publicFields?.includes('bloodType') ? 'bg-green-600' : 'bg-gray-200'}`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
                     userData?.publicFields?.includes('bloodType') ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -305,22 +406,25 @@ export default function PrivacyPage() {
             </div>
 
             {/* Allergies */}
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <div className="flex items-center space-x-3">
-                <Shield className="w-5 h-5 text-orange-500" />
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-orange-600" />
+                </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Allergies</h4>
+                  <h4 className="font-semibold text-gray-900">Allergies</h4>
                   <p className="text-sm text-gray-500">Critical for medical treatment</p>
                 </div>
               </div>
               <button
                 onClick={() => handleFieldToggle('allergies')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  userData?.publicFields?.includes('allergies') ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                disabled={updatePrivacyMutation.isPending}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                  updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+                } ${userData?.publicFields?.includes('allergies') ? 'bg-green-600' : 'bg-gray-200'}`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
                     userData?.publicFields?.includes('allergies') ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -328,22 +432,25 @@ export default function PrivacyPage() {
             </div>
 
             {/* Emergency Contact */}
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-red-500" />
+                <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-red-600" />
+                </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Emergency Contact</h4>
+                  <h4 className="font-semibold text-gray-900">Emergency Contact</h4>
                   <p className="text-sm text-gray-500">Contact information for emergencies</p>
                 </div>
               </div>
               <button
                 onClick={() => handleFieldToggle('emergencyContact')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  userData?.publicFields?.includes('emergencyContact') ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                disabled={updatePrivacyMutation.isPending}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                  updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+                } ${userData?.publicFields?.includes('emergencyContact') ? 'bg-green-600' : 'bg-gray-200'}`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
                     userData?.publicFields?.includes('emergencyContact') ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -355,26 +462,41 @@ export default function PrivacyPage() {
 
       {/* Quick Actions */}
       {userData?.isPublicProfile && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
+        <div className="bg-green-600 rounded-xl p-6 text-white shadow-lg">
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="flex flex-wrap gap-3">
             <a
               href={shareUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-white text-green-700 rounded-lg hover:bg-green-50 transition-colors font-medium"
             >
               <Eye className="w-4 h-4" />
               <span>Preview Profile</span>
             </a>
             <button 
               onClick={() => setQrModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-colors"
+              disabled={updatePrivacyMutation.isPending}
+              className={`flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-colors font-medium ${
+                updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               <QrCode className="w-4 h-4" />
               <span>Generate QR Code</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-colors">
+            <button 
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'My Health Profile', text: 'Access my health information', url: shareUrl }).catch(() => {});
+                } else {
+                  copyShareLink();
+                }
+              }}
+              disabled={updatePrivacyMutation.isPending}
+              className={`flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-colors font-medium ${
+                updatePrivacyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
               <Share2 className="w-4 h-4" />
               <span>Share Profile</span>
             </button>
@@ -399,25 +521,35 @@ function PasswordInput({ onUpdate, currentPassword }) {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     if (password.length < 4) {
       setError('Password must be at least 4 characters');
+      setIsSubmitting(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setIsSubmitting(false);
       return;
     }
 
-    onUpdate(password);
-    setPassword('');
-    setConfirmPassword('');
-    toast.success('Share link password updated');
+    try {
+      await onUpdate(password);
+      setPassword('');
+      setConfirmPassword('');
+      toast.success('Share link password updated');
+    } catch (err) {
+      setError(err.message || 'Failed to update password');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRemove = () => {
@@ -453,7 +585,7 @@ function PasswordInput({ onUpdate, currentPassword }) {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                 placeholder="Enter password"
               />
               <button
@@ -474,7 +606,7 @@ function PasswordInput({ onUpdate, currentPassword }) {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
               placeholder="Confirm password"
             />
           </div>
@@ -485,9 +617,12 @@ function PasswordInput({ onUpdate, currentPassword }) {
 
           <button
             type="submit"
-            className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isSubmitting}
+            className={`w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors ${
+              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Set Password
+            {isSubmitting ? 'Setting...' : 'Set Password'}
           </button>
         </form>
       )}

@@ -16,7 +16,10 @@ import {
   Mail,
   Edit,
   Plus,
-  Trash2
+  Trash2,
+  Search,
+  Check,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { authAPI } from '@/lib/api/auth';
@@ -34,20 +37,16 @@ export default function EmergencyPage() {
   const [sosLoading, setSosLoading] = useState(false);
   const [showSOSConfirm, setShowSOSConfirm] = useState(false);
 
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = getToken();
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   const [emergencyData, setEmergencyData] = useState({
     emergencyContact: {
       name: '',
       phone: '',
-      relationship: ''
+      relationship: '',
+      linkedUsername: null  // Store linked profile username
     },
     emergencyMode: {
       enabled: false,
@@ -56,15 +55,25 @@ export default function EmergencyPage() {
     },
     additionalContacts: []
   });
+  
+  const [showUsernameSearch, setShowUsernameSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (userData?.data) {
       setEmergencyData({
-        emergencyContact: userData.data.emergencyContact || emergencyData.emergencyContact,
+        emergencyContact: userData.data.emergencyContact || {
+          name: '',
+          phone: '',
+          relationship: '',
+          linkedUsername: null
+        },
         emergencyMode: {
           enabled: userData.data.emergencyMode?.enabled || false,
           showCriticalOnly: userData.data.emergencyMode?.showCriticalOnly !== false,
-          criticalFields: userData.data.emergencyMode?.criticalFields || emergencyData.emergencyMode.criticalFields
+          criticalFields: userData.data.emergencyMode?.criticalFields || ['bloodType', 'allergies', 'emergencyContact', 'chronicConditions']
         },
         additionalContacts: userData.data.additionalContacts || []
       });
@@ -170,6 +179,72 @@ export default function EmergencyPage() {
     }));
   };
 
+  const handleSearchUsername = async (query) => {
+    setSearching(true);
+    setSearchQuery(query);
+    
+    if (!query || query.length < 3) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+
+    try {
+      const token = getToken();
+      if (!token) {
+        toast.error('Please log in');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/profile/search/${query}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSearchResults(result.data || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectLinkedUser = (user) => {
+    setEmergencyData(prev => ({
+      ...prev,
+      emergencyContact: {
+        ...prev.emergencyContact,
+        name: user.name,
+        linkedUsername: user.username,
+        phone: prev.emergencyContact.phone || '',
+      }
+      }));
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowUsernameSearch(false);
+    toast.success(`Linked to ${user.name}`);
+  };
+
+  const unlinkUser = () => {
+    setEmergencyData(prev => ({
+      ...prev,
+      emergencyContact: {
+        ...prev.emergencyContact,
+        linkedUsername: null
+      }
+    }));
+    toast.success('Contact unlinked');
+  };
+
   const updateContact = (index, field, value) => {
     setEmergencyData(prev => ({
       ...prev,
@@ -257,10 +332,109 @@ export default function EmergencyPage() {
         transition={{ delay: 0.1 }}
         className="bg-red-50 border border-red-200 rounded-xl p-6"
       >
-        <div className="flex items-center mb-4">
-          <AlertTriangle className="w-6 h-6 text-red-600 mr-2" />
-          <h2 className="text-xl font-semibold text-red-900">Primary Emergency Contact</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <AlertTriangle className="w-6 h-6 text-red-600 mr-2" />
+            <h2 className="text-xl font-semibold text-red-900">Primary Emergency Contact</h2>
+          </div>
+          {emergencyData.emergencyContact.linkedUsername && isEditing && (
+            <button
+              onClick={unlinkUser}
+              className="flex items-center space-x-1 px-3 py-1 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm"
+            >
+              <X className="w-4 h-4" />
+              <span>Unlink</span>
+            </button>
+          )}
         </div>
+        
+        {/* Linked Profile Badge */}
+        {emergencyData.emergencyContact.linkedUsername && !isEditing && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Check className="w-5 h-5 text-green-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-900">
+                  Linked to My Health Link profile: @{emergencyData.emergencyContact.linkedUsername}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  Contact's info will be automatically updated if they change their profile
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Link to Profile Button */}
+        {isEditing && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowUsernameSearch(!showUsernameSearch)}
+              className="flex items-center space-x-2 px-4 py-2 bg-white border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors w-full"
+            >
+              {showUsernameSearch ? (
+                <>
+                  <X className="w-4 h-4" />
+                  <span>Close Search</span>
+                </>
+              ) : (
+                <>
+                  <LinkIcon className="w-4 h-4" />
+                  <span>Link to My Health Link Profile</span>
+                </>
+              )}
+            </button>
+            
+            {/* Search UI */}
+            {showUsernameSearch && (
+              <div className="mt-3 bg-white border border-red-300 rounded-lg p-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    placeholder="Search by username (min 3 characters)"
+                  />
+                </div>
+                
+                {/* Search Results */}
+                {searching && (
+                  <div className="mt-3 text-center py-2">
+                    <p className="text-sm text-gray-600">Searching...</p>
+                  </div>
+                )}
+                
+                {!searching && searchResults.length > 0 && (
+                  <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
+                    {searchResults.map((user) => (
+                      <button
+                        key={user._id}
+                        onClick={() => selectLinkedUser(user)}
+                        className="w-full flex items-center space-x-3 p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                      >
+                        <User className="w-8 h-8 text-red-600" />
+                        <div className="flex-1 text-left">
+                          <p className="font-medium text-gray-900">{user.name}</p>
+                          <p className="text-sm text-gray-600">@{user.username}</p>
+                        </div>
+                        <Check className="w-5 h-5 text-green-600" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {!searching && searchQuery.length >= 3 && searchResults.length === 0 && (
+                  <div className="mt-3 text-center py-2">
+                    <p className="text-sm text-gray-600">No users found</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-red-900 mb-2">Contact Name</label>
@@ -274,6 +448,7 @@ export default function EmergencyPage() {
                 }))}
                 className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="Full name"
+                disabled={emergencyData.emergencyContact.linkedUsername !== null}
               />
             ) : (
               <p className="text-red-900 font-semibold">{emergencyData.emergencyContact.name || 'Not set'}</p>

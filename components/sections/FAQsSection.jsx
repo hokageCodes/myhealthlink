@@ -58,19 +58,15 @@ export default function FAQSection() {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-gradient-to-br from-neutral-50 via-white to-brand-50">
+    <section className="py-12 lg:py-16 bg-white">
       <div className="container mx-auto px-4 lg:px-6">
         
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <div className="inline-flex items-center space-x-2 bg-white px-4 py-2 rounded-full border border-brand-200 shadow-sm mb-6">
-            <HelpCircle className="w-4 h-4 text-brand-600" />
-            <span className="text-sm font-semibold text-brand-700">FREQUENTLY ASKED QUESTIONS</span>
-          </div>
           
           <h2 className="text-4xl lg:text-5xl font-bold font-heading text-neutral-900 mb-6">
             Got questions?{' '}
-            <span className="text-brand-600">We've got answers</span>
+            <span className="text-brand-600">We have the answers</span>
           </h2>
           
           <p className="text-lg text-neutral-600 leading-relaxed">
@@ -129,31 +125,7 @@ export default function FAQSection() {
           </a>
         </div>
 
-        {/* Bottom CTA */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-8 lg:p-12 text-center text-white shadow-2xl">
-            <h3 className="text-3xl font-bold font-heading mb-4">
-              Still have questions?
-            </h3>
-            <p className="text-brand-50 text-lg mb-6">
-              Our support team is here to help you get started with MyHealthLink.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/contact"
-                className="px-8 py-4 bg-white hover:bg-neutral-50 text-brand-600 font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-              >
-                Contact Support
-              </a>
-              <a
-                href="/demo"
-                className="px-8 py-4 bg-brand-700 hover:bg-brand-800 text-white font-semibold rounded-full border-2 border-white/20 transition-all duration-200"
-              >
-                Schedule a Demo
-              </a>
-            </div>
-          </div>
-        </div>
+          
       </div>
     </section>
   );

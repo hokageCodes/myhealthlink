@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
   QrCode, 
@@ -24,20 +24,14 @@ import Image from 'next/image';
 
 export default function SharePage() {
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   const [showQRModal, setShowQRModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
 
-  // Fetch user profile
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = getToken();
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   useEffect(() => {
     if (userData?.data?.username) {
@@ -135,56 +129,83 @@ export default function SharePage() {
 
             {user ? (
               <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="relative w-16 h-16 bg-surface-200 rounded-xl flex items-center justify-center overflow-hidden">
+                {/* Profile Header */}
+                <div className="flex items-center space-x-4 pb-4 border-b border-surface-200">
+                  <div className="relative w-20 h-20 bg-surface-200 rounded-xl flex items-center justify-center overflow-hidden">
                     {user.profilePicture ? (
                       <Image
                         src={user.profilePicture}
                         alt={user.name}
                         fill
-                        sizes="64px"
+                        sizes="80px"
                         className="object-cover rounded-xl"
                       />
                     ) : (
-                      <User className="w-8 h-8 text-surface-400" />
+                      <User className="w-10 h-10 text-surface-400" />
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-surface-900">{user.name}</h3>
-                    <p className="text-sm text-surface-600">
-                      {user.dateOfBirth ? 
-                        `${new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()} years old` : 
-                        'Age not specified'
-                      }
-                    </p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-surface-900">{user.name}</h3>
+                    {user.dateOfBirth && (
+                      <p className="text-sm text-surface-600">
+                        {new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()} years old
+                        {user.gender && ` • ${user.gender}`}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {user.bloodType && (
-                    <div className="bg-danger-50 rounded-lg p-3">
-                      <p className="text-xs text-danger-600 font-medium">Blood Type</p>
-                      <p className="text-danger-900 font-semibold">{user.bloodType}</p>
+                {/* Medical Information Grid */}
+                <div className="space-y-3">
+                  {user.bloodType && user.publicFields?.includes('bloodType') && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Heart className="w-5 h-5 text-red-600" />
+                        <p className="text-sm font-medium text-red-700">Blood Type</p>
+                      </div>
+                      <p className="text-red-900 font-bold text-lg">{user.bloodType}</p>
                     </div>
                   )}
-                  {user.allergies && (
-                    <div className="bg-warning-50 rounded-lg p-3">
-                      <p className="text-xs text-warning-600 font-medium">Allergies</p>
-                      <p className="text-warning-900 font-semibold text-sm">
-                        {user.allergies.length > 20 ? `${user.allergies.substring(0, 20)}...` : user.allergies}
-                      </p>
+
+                  {user.allergies && user.publicFields?.includes('allergies') && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Shield className="w-5 h-5 text-orange-600" />
+                        <p className="text-sm font-medium text-orange-700">Allergies</p>
+                      </div>
+                      <p className="text-orange-900 text-sm leading-relaxed">{user.allergies}</p>
+                    </div>
+                  )}
+
+                  {user.emergencyContact && user.publicFields?.includes('emergencyContact') && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Phone className="w-5 h-5 text-blue-600" />
+                        <p className="text-sm font-medium text-blue-700">Emergency Contact</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-blue-900 font-semibold">{user.emergencyContact.name}</p>
+                        <a href={`tel:${user.emergencyContact.phone}`} className="text-blue-700 text-sm hover:text-blue-900">
+                          {user.emergencyContact.phone}
+                        </a>
+                        {user.emergencyContact.relationship && (
+                          <p className="text-blue-600 text-xs">{user.emergencyContact.relationship}</p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {user.emergencyContact && (
-                  <div className="bg-danger-50 border border-danger-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Shield className="w-4 h-4 text-danger-600" />
-                      <p className="text-sm font-medium text-danger-900">Emergency Contact</p>
-                    </div>
-                    <p className="text-danger-800 text-sm">{user.emergencyContact.name}</p>
-                    <p className="text-danger-700 text-xs">{user.emergencyContact.phone}</p>
+                {/* Empty State if Nothing Shared */}
+                {(!user.publicFields || user.publicFields.length === 0) && (
+                  <div className="text-center py-8 border-2 border-dashed border-surface-300 rounded-lg">
+                    <Eye className="w-12 h-12 text-surface-300 mx-auto mb-3" />
+                    <p className="text-surface-500 text-sm mb-2">No information shared yet</p>
+                    <Link href="/dashboard/privacy">
+                      <button className="text-brand-600 hover:text-brand-700 text-sm font-medium">
+                        Go to Privacy Settings →
+                      </button>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -305,3 +326,4 @@ export default function SharePage() {
     </div>
   );
 }
+

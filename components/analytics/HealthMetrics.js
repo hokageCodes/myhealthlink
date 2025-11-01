@@ -64,71 +64,8 @@ const HealthMetrics = ({ metrics = [] }) => {
     return value;
   };
 
-  // Default metrics if none provided
-  const defaultMetrics = [
-    {
-      id: 1,
-      type: 'heart_rate',
-      name: 'Heart Rate',
-      value: 72,
-      target: 80,
-      unit: 'bpm',
-      trend: 'stable',
-      lastUpdated: '2 minutes ago'
-    },
-    {
-      id: 2,
-      type: 'steps',
-      name: 'Daily Steps',
-      value: 8500,
-      target: 10000,
-      unit: 'steps',
-      trend: 'up',
-      lastUpdated: '5 minutes ago'
-    },
-    {
-      id: 3,
-      type: 'calories',
-      name: 'Calories Burned',
-      value: 450,
-      target: 500,
-      unit: 'cal',
-      trend: 'up',
-      lastUpdated: '1 hour ago'
-    },
-    {
-      id: 4,
-      type: 'sleep',
-      name: 'Sleep Duration',
-      value: 7.5,
-      target: 8,
-      unit: 'hours',
-      trend: 'stable',
-      lastUpdated: '6 hours ago'
-    },
-    {
-      id: 5,
-      type: 'hydration',
-      name: 'Water Intake',
-      value: 1800,
-      target: 2500,
-      unit: 'ml',
-      trend: 'down',
-      lastUpdated: '30 minutes ago'
-    },
-    {
-      id: 6,
-      type: 'weight',
-      name: 'Weight',
-      value: 70.5,
-      target: 70,
-      unit: 'kg',
-      trend: 'stable',
-      lastUpdated: '1 day ago'
-    }
-  ];
-
-  const metricsToShow = metrics.length > 0 ? metrics : defaultMetrics;
+  // Use only real metrics from props
+  const metricsToShow = metrics;
 
   return (
     <motion.div
@@ -145,7 +82,8 @@ const HealthMetrics = ({ metrics = [] }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {metricsToShow.map((metric, index) => (
+        {metricsToShow && metricsToShow.length > 0 ? (
+          metricsToShow.map((metric, index) => (
           <motion.div
             key={metric.id}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -200,7 +138,13 @@ const HealthMetrics = ({ metrics = [] }) => {
               </div>
             )}
           </motion.div>
-        ))}
+          ))
+        ) : (
+          <div className="col-span-2 text-center py-8">
+            <Gauge className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className="text-sm text-gray-500">No health metrics available yet</p>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}

@@ -1,88 +1,82 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  MapPin, 
-  Shield, 
+import {
+  User as UserIcon,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
   Heart,
   Camera,
   Save,
   Edit3,
-  Check
+  X,
+  Check,
 } from 'lucide-react';
 import { authAPI } from '@/lib/api/auth';
-import Image from 'next/image';
 
-// Profile validation schema
-const profileSchema = Yup.object({
-  name: Yup.string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name cannot exceed 50 characters')
-    .required('Name is required'),
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
-  phone: Yup.string()
-    .matches(/^(\+234|0)?[789][01]\d{8}$/, 'Invalid Nigerian phone number')
-    .required('Phone number is required'),
-  dateOfBirth: Yup.date()
-    .max(new Date(), 'Date of birth cannot be in the future')
-    .required('Date of birth is required'),
-  gender: Yup.string()
-    .oneOf(['male', 'female', 'other'], 'Please select a valid gender')
-    .required('Gender is required'),
-  bloodType: Yup.string()
-    .oneOf(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', '', null], 'Invalid blood type'),
-  allergies: Yup.string()
-    .max(500, 'Allergies description cannot exceed 500 characters'),
-  emergencyContact: Yup.object({
-    name: Yup.string().max(50, 'Emergency contact name cannot exceed 50 characters'),
-    phone: Yup.string().matches(/^(\+234|0)?[789][01]\d{8}$/, 'Invalid Nigerian phone number'),
-    relationship: Yup.string().max(30, 'Relationship cannot exceed 30 characters'),
+/**
+ * Profile page — improved UX and layout
+ *
+ * Notes:
+ * - Expects authAPI.profile.get(token) and authAPI.profile.update(token, data).
+ * - Upload endpoint used: `${NEXT_PUBLIC_API_URL}/profile/upload-picture` (same as you had).
+ * - Uses local preview for immediate feedback and revokes URL to avoid memory leaks.
+ */
+
+const phoneRegex = /^(\+234|0)?[789][01]\d{8}$/;
+
+const ProfileSchema = Yup.object({
+  name: Yup.string().min(2, 'Name must be at least 2 characters').max(50).required('Name is required'),
+  email: Yup.string().email('Invalid email address').required('Email is required'),
+  phone: Yup.string().matches(phoneRegex, 'Invalid Nigerian phone number').required('Phone number is required'),
+  dateOfBirth: Yup.date().max(new Date(), 'Date cannot be in the future').required('Date of birth is required'),
+  gender: Yup.string().oneOf(['male', 'female', 'other']).required('Gender is required'),
+  bloodType: Yup.string().oneOf(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', ''], 'Invalid blood type'),
+  allergies: Yup.string().max(500, 'Allergies cannot exceed 500 characters'),
+  emergencyContact: Yup.object().shape({
+    name: Yup.string().max(50, 'Name too long'),
+    phone: Yup.string().matches(phoneRegex, 'Invalid Nigerian phone number'),
+    relationship: Yup.string().max(30, 'Too long'),
   }),
 });
 
 export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [localImage, setLocalImage] = useState(null); // File
+  const [localPreviewUrl, setLocalPreviewUrl] = useState(null); // blob url
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const abortUploadRef = useRef(null);
 
-  // Fetch user data
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-    staleTime: Infinity,
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   // Update profile mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: async (profileData) => {
+  const updateProfile = useMutation({
+    mutationFn: async (values) => {
       const token = localStorage.getItem('accessToken');
       if (!token) throw new Error('No token');
-      return await authAPI.profile.update(token, profileData);
+      return await authAPI.profile.update(token, values);
     },
     onSuccess: () => {
-      toast.success('Profile updated successfully');
+      toast.success('Profile updated');
       setIsEditing(false);
       queryClient.invalidateQueries(['userProfile']);
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to update profile');
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to update profile');
     },
   });
 
+  // Formik setup
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -99,461 +93,291 @@ export default function ProfilePage() {
         relationship: userData?.emergencyContact?.relationship || '',
       },
     },
-    validationSchema: profileSchema,
+    validationSchema: ProfileSchema,
     onSubmit: (values) => {
-      updateProfileMutation.mutate(values);
+      updateProfile.mutate(values);
     },
   });
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfileImage(file);
-      
-      // Upload to server immediately
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) throw new Error('No token');
-        
-        const formData = new FormData();
-        formData.append('profilePicture', file);
-        
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${API_URL}/profile/upload-picture`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          toast.success('Profile picture uploaded successfully!');
-          // Refresh user data to get the new profile picture URL
-          queryClient.invalidateQueries(['userProfile']);
-        } else {
-          toast.error(result.message || 'Failed to upload profile picture');
-        }
-      } catch (error) {
-        console.error('Upload error:', error);
-        toast.error('Failed to upload profile picture');
-      }
+  // Manage local preview URL lifecycle
+  useEffect(() => {
+    if (!localImage) return;
+    const url = URL.createObjectURL(localImage);
+    setLocalPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      setLocalPreviewUrl(null);
+    };
+  }, [localImage]);
+
+  // Reset local image preview when userData updates (successful upload)
+  useEffect(() => {
+    if (!userData?.profilePicture) return;
+    setLocalImage(null);
+    setLocalPreviewUrl(null);
+    setUploadProgress(0);
+  }, [userData?.profilePicture]);
+
+  const handleStartEditing = () => setIsEditing(true);
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    formik.resetForm();
+    // clear any selected image preview
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
+    setLocalImage(null);
+    setLocalPreviewUrl(null);
+    setUploadProgress(0);
+    // abort upload if in progress
+    if (abortUploadRef.current) {
+      abortUploadRef.current.abort();
+      abortUploadRef.current = null;
+    }
+  };
+
+  // Upload image and refresh profile
+  const handleImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Basic client-side validation
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    // optional size limit (e.g., 5MB)
+    const maxMB = 5;
+    if (file.size > maxMB * 1024 * 1024) {
+      toast.error(`Image must be smaller than ${maxMB}MB`);
+      return;
+    }
+
+    setLocalImage(file);
+    // perform upload
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('No token');
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const url = `${API_URL}/profile/upload-picture`;
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      // use fetch with AbortController to track progress — fetch doesn't support progress natively.
+      // So we use XMLHttpRequest here for progress events.
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        abortUploadRef.current = xhr;
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
+          }
+        };
+        xhr.onload = () => {
+          abortUploadRef.current = null;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const resp = JSON.parse(xhr.responseText);
+              if (resp.success) {
+                toast.success('Profile picture uploaded');
+                queryClient.invalidateQueries(['userProfile']);
+                resolve(resp);
+              } else {
+                toast.error(resp.message || 'Upload failed');
+                reject(new Error(resp.message || 'Upload failed'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => {
+          abortUploadRef.current = null;
+          reject(new Error('Upload failed'));
+        };
+        xhr.onabort = () => {
+          abortUploadRef.current = null;
+          reject(new Error('Upload aborted'));
+        };
+        xhr.send(formData);
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error?.message || 'Failed to upload image');
+      setUploadProgress(0);
+      setLocalImage(null);
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-600" aria-hidden />
+        <span className="sr-only">Loading profile</span>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b border-gray-100 px-2 -mx-2 py-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage your information</p>
-          </div>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              isEditing
-                ? 'bg-gray-100 text-gray-700'
-                : 'bg-gray-900 text-white'
-            }`}
-          >
-            {isEditing ? <Check className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-            <span>{isEditing ? 'Done' : 'Edit'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop Header */}
-      <div className="hidden lg:flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-light text-gray-900">Profile</h1>
-          <p className="text-gray-500 mt-1">Manage your personal information</p>
-        </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-            isEditing
-              ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
-          }`}
-        >
-          {isEditing ? <Check className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-          <span>{isEditing ? 'Cancel' : 'Edit'}</span>
-        </button>
-      </div>
-
-      <div className="space-y-4 lg:space-y-6">
-
-      <form onSubmit={formik.handleSubmit} className="space-y-8">
-        {/* Profile Photo Section */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
-          {/* Mobile Layout */}
-          <div className="lg:hidden text-center">
-            <div className="relative inline-block">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden mx-auto relative">
-  {profileImage ? (
-    <Image
-      src={URL.createObjectURL(profileImage)}
-      alt="Profile"
-      width={80}
-      height={80}
-      className="object-cover"
-    />
-  ) : userData?.profilePicture ? (
-    <Image
-      src={userData.profilePicture}
-      alt="Profile"
-      width={80}
-      height={80}
-      className="object-cover"
-    />
-  ) : (
-    <User className="w-10 h-10 text-gray-400" />
-  )}
-</div>
-
-              {isEditing && (
-                <label className="absolute bottom-0 right-0 bg-gray-900 text-white p-1.5 rounded-full cursor-pointer">
-                  <Camera className="w-3 h-3" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mt-3">
-              {userData?.name || 'User'}
-            </h3>
-            <p className="text-sm text-gray-500">{userData?.email || 'user@example.com'}</p>
-            {isEditing && (
-              <p className="text-xs text-gray-400 mt-1">Tap camera icon to change photo</p>
-            )}
-          </div>
-
-          {/* Desktop Layout */}
-          <div className="hidden lg:flex items-center space-x-6">
-            <div className="relative">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden relative">
-  {profileImage ? (
-    <Image
-      src={URL.createObjectURL(profileImage)}
-      alt="Profile"
-      width={96}
-      height={96}
-      className="object-cover"
-    />
-  ) : userData?.profilePicture ? (
-    <Image
-      src={userData.profilePicture}
-      alt="Profile"
-      width={96}
-      height={96}
-      className="object-cover"
-    />
-  ) : (
-    <User className="w-12 h-12 text-gray-400" />
-  )}
-</div>
-
-              {isEditing && (
-                <label className="absolute bottom-0 right-0 bg-gray-900 text-white p-2 rounded-full cursor-pointer hover:bg-gray-800 transition-colors">
-                  <Camera className="w-4 h-4" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">
-                {userData?.name || 'User'}
-              </h3>
-              <p className="text-gray-500">{userData?.email || 'user@example.com'}</p>
-              {isEditing && (
-                <p className="text-sm text-gray-400 mt-1">Click camera icon to change photo</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Basic Information */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
-          <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Basic Information</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  {...formik.getFieldProps('name')}
-                  className="w-full px-3 py-3 lg:py-2 border border-gray-200 lg:border-gray-300 rounded-xl lg:rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors text-base lg:text-sm"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.name || 'Not provided'}</span>
+    <div className="min-h-screen bg-white -mx-2 md:-mx-0">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto mb-10">
+        <div className="relative bg-gradient-to-br from-green-600 to-emerald-600 text-white rounded-2xl shadow-lg p-8 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('/patterns/pattern.svg')] opacity-10" />
+  
+          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between relative z-10">
+            <div className="flex items-center space-x-5">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md">
+                  {localPreviewUrl ? (
+                    <img src={localPreviewUrl} alt="Profile" className="object-cover w-full h-full" />
+                  ) : userData?.profilePicture ? (
+                    <Image
+                      src={userData.profilePicture}
+                      alt="Profile"
+                      width={112}
+                      height={112}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-white/10">
+                      <UserIcon className="w-10 h-10 text-white/70" />
+                    </div>
+                  )}
                 </div>
-              )}
-              {formik.touched.name && formik.errors.name && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.name}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="flex items-center space-x-2 text-gray-900">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <span>{userData?.email || 'Not provided'}</span>
+  
+                {isEditing && (
+                  <label
+                    htmlFor="profile-upload"
+                    className="absolute bottom-0 right-0 bg-white text-gray-900 p-2 rounded-full cursor-pointer shadow-md hover:scale-105 transition-transform"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <input id="profile-upload" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+                  </label>
+                )}
               </div>
-              <p className="text-sm text-gray-400 mt-1">Email cannot be changed</p>
+  
+              <div>
+                <h1 className="text-2xl font-semibold">{userData?.name || 'Your Name'}</h1>
+                <p className="text-sm text-gray-100">{userData?.email || 'you@email.com'}</p>
+                <p className="text-xs text-gray-200 mt-1">Keep your profile updated for a personalized experience</p>
+              </div>
             </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              {isEditing ? (
-                <input
-                  type="tel"
-                  {...formik.getFieldProps('phone')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.phone || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.phone && formik.errors.phone && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.phone}</p>
-              )}
-            </div>
-
-            {/* Date of Birth */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
-              </label>
-              {isEditing ? (
-                <input
-                  type="date"
-                  {...formik.getFieldProps('dateOfBirth')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.dateOfBirth ? new Date(userData.dateOfBirth).toLocaleDateString() : 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.dateOfBirth && formik.errors.dateOfBirth && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.dateOfBirth}</p>
-              )}
-            </div>
-
-            {/* Gender */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gender
-              </label>
-              {isEditing ? (
-                <select
-                  {...formik.getFieldProps('gender')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
+  
+            <div className="mt-6 sm:mt-0 flex items-center space-x-3">
+                {!isEditing ? (
+                <button
+                  onClick={handleStartEditing}
+                  className="inline-flex items-center gap-2 bg-white text-green-700 px-5 py-2.5 rounded-lg font-medium shadow hover:bg-green-50 transition"
                 >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                  <Edit3 className="w-4 h-4" /> Edit Profile
+                </button>
               ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="capitalize">{userData?.gender || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.gender && formik.errors.gender && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.gender}</p>
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="inline-flex items-center gap-2 border border-white/50 text-white px-5 py-2.5 rounded-lg hover:bg-white/10 transition"
+                  >
+                    <X className="w-4 h-4" /> Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    onClick={formik.submitForm}
+                    disabled={updateProfile.isLoading}
+                    className="inline-flex items-center gap-2 bg-white text-green-700 px-5 py-2.5 rounded-lg font-medium hover:bg-green-50 transition disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" /> {updateProfile.isLoading ? 'Saving...' : 'Save'}
+                  </button>
+                </>
               )}
             </div>
           </div>
         </div>
-
-        {/* Medical Information */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
-          <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Medical Information</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            {/* Blood Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Blood Type
-              </label>
-              {isEditing ? (
-                <select
-                  {...formik.getFieldProps('bloodType')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                >
-                  <option value="">Select blood type</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                </select>
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <Heart className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.bloodType || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.bloodType && formik.errors.bloodType && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.bloodType}</p>
-              )}
-            </div>
-
-            {/* Allergies */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Allergies
-              </label>
-              {isEditing ? (
-                <textarea
-                  {...formik.getFieldProps('allergies')}
-                  rows={3}
-                  placeholder="List any allergies or reactions to medications..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors resize-none"
-                />
-              ) : (
-                <div className="text-gray-900">
-                  <p>{userData?.allergies || 'No known allergies'}</p>
-                </div>
-              )}
-              {formik.touched.allergies && formik.errors.allergies && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.allergies}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Emergency Contact */}
-        <div className="bg-white rounded-xl lg:rounded-lg border border-gray-100 lg:border-gray-200 p-4 lg:p-6">
-          <h3 className="text-lg font-semibold lg:font-medium text-gray-900 mb-4 lg:mb-6">Emergency Contact</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            {/* Emergency Contact Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Name
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  {...formik.getFieldProps('emergencyContact.name')}
-                  placeholder="Full name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.emergencyContact?.name || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.emergencyContact?.name && formik.errors.emergencyContact?.name && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.emergencyContact.name}</p>
-              )}
-            </div>
-
-            {/* Emergency Contact Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone
-              </label>
-              {isEditing ? (
-                <input
-                  type="tel"
-                  {...formik.getFieldProps('emergencyContact.phone')}
-                  placeholder="Phone number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.emergencyContact?.phone || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.emergencyContact?.phone && formik.errors.emergencyContact?.phone && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.emergencyContact.phone}</p>
-              )}
-            </div>
-
-            {/* Relationship */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Relationship
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  {...formik.getFieldProps('emergencyContact.relationship')}
-                  placeholder="e.g., Spouse, Parent, Sibling"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none transition-colors"
-                />
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-900">
-                  <Shield className="w-4 h-4 text-gray-400" />
-                  <span>{userData?.emergencyContact?.relationship || 'Not provided'}</span>
-                </div>
-              )}
-              {formik.touched.emergencyContact?.relationship && formik.errors.emergencyContact?.relationship && (
-                <p className="text-sm text-red-600 mt-1">{formik.errors.emergencyContact.relationship}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Save Button */}
-        {isEditing && (
-          <div className="px-4 lg:px-0 pb-6 lg:pb-0">
-            <div className="flex justify-center lg:justify-end">
-              <button
-                type="submit"
-                disabled={updateProfileMutation.isPending}
-                className="flex items-center space-x-2 bg-gray-900 text-white px-6 py-3 lg:py-2 rounded-xl lg:rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base lg:text-sm font-medium w-full lg:w-auto justify-center"
-              >
-                <Save className="w-5 h-5 lg:w-4 lg:h-4" />
-                <span>{updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </form>
       </div>
+  
+      {/* Form Cards */}
+      <form onSubmit={formik.handleSubmit} className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="bg-white/70 backdrop-blur-md shadow-md rounded-2xl p-6 space-y-4 border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Overview</h2>
+            <div className="space-y-3 text-gray-700">
+              <p><Mail className="inline w-4 h-4 mr-2 text-green-600" /> {userData?.email}</p>
+              <p><Phone className="inline w-4 h-4 mr-2 text-green-600" /> {userData?.phone || 'N/A'}</p>
+              <p><Calendar className="inline w-4 h-4 mr-2 text-green-600" /> {userData?.dateOfBirth ? new Date(userData.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+  
+        {/* Main Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white/70 backdrop-blur-md border border-gray-100 shadow-md rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Example input */}
+              <label>
+                <span className="text-sm font-medium text-gray-700">Full Name</span>
+                <input
+                  name="name"
+                  {...formik.getFieldProps('name')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+  
+              <label>
+                <span className="text-sm font-medium text-gray-700">Phone</span>
+                <input
+                  name="phone"
+                  {...formik.getFieldProps('phone')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+            </div>
+          </div>
+  
+          <div className="bg-white/70 backdrop-blur-md border border-gray-100 shadow-md rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Emergency Contact</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label>
+                <span className="text-sm font-medium text-gray-700">Name</span>
+                <input
+                  name="emergencyContact.name"
+                  {...formik.getFieldProps('emergencyContact.name')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+              <label>
+                <span className="text-sm font-medium text-gray-700">Phone</span>
+                <input
+                  name="emergencyContact.phone"
+                  {...formik.getFieldProps('emergencyContact.phone')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+              <label>
+                <span className="text-sm font-medium text-gray-700">Relationship</span>
+                <input
+                  name="emergencyContact.relationship"
+                  {...formik.getFieldProps('emergencyContact.relationship')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
   );
+  
 }

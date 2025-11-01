@@ -36,7 +36,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
-<<<<<<< HEAD
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -60,23 +59,6 @@ app.use(cors({
       } else {
         callback(new Error('Not allowed by CORS'));
       }
-=======
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://myhealthlink.vercel.app']
-  : ['http://localhost:3000'];
-
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
->>>>>>> 5b2e669ef6534aa2630048b6111ce529cdd874d1
     }
   },
   credentials: true,

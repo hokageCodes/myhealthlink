@@ -92,7 +92,7 @@ export default function FeaturesListSection() {
           <h2 className="text-4xl lg:text-5xl font-semibold font-heading text-neutral-900 mb-6">
             Everything you need for{' '}
             <span className="text-brand-600 relative">
-              complete health control
+              personalized health control
               <svg
                 className="absolute -bottom-2 left-0 w-full h-3 text-brand-300"
                 viewBox="0 0 300 12"

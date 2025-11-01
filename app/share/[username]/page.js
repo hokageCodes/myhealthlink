@@ -3,338 +3,390 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { 
+  Share2, 
+  Copy, 
   User, 
   Heart, 
-  Phone, 
-  Calendar, 
   Shield, 
-  AlertTriangle,
-  Download,
-  Share2,
-  QrCode,
+  Phone,
   Lock,
   Key,
-  Mail,
-  Check
+  AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import { shareAPI } from '@/lib/api/share';
 import toast from 'react-hot-toast';
 
-export default function PublicProfilePage() {
+export default function PublicSharePage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const username = params.username;
+  const accessToken = searchParams.get('token');
+  
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requiresAuth, setRequiresAuth] = useState(false);
   const [accessType, setAccessType] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
   
-  // Password auth state
+  // Auth states
   const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  
-  // OTP auth state
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpRequested, setOtpRequested] = useState(false);
-  const [otpError, setOtpError] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
-
-  // Check for token in URL
-  useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      setAccessToken(token);
-    }
-  }, [searchParams]);
+  const [verifying, setVerifying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const fetchPublicProfile = async () => {
-      try {
-        setLoading(true);
-        const result = await shareAPI.getPublicProfile(params.username, accessToken);
-        
-        if (result.success) {
-          setProfileData(result.data);
-          setRequiresAuth(false);
-        }
-      } catch (err) {
-        const errorMessage = err.message || 'Failed to load profile';
-        setError(errorMessage);
-        
-        // Check if authentication is required
-        try {
-          const errorResponse = await shareAPI.getPublicProfile(params.username);
-          // If it throws, check the response structure
-          if (err.toString().includes('requiresAuth') || errorMessage.includes('Password') || errorMessage.includes('OTP')) {
-            setRequiresAuth(true);
-            // Try to determine access type from error message
-            if (errorMessage.includes('Password')) {
-              setAccessType('password');
-            } else if (errorMessage.includes('OTP')) {
-              setAccessType('otp');
-            }
-          }
-        } catch (fetchError) {
-          // Parse the fetch error response if possible
-          try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-            const response = await fetch(`${API_URL}/public/profile/${params.username}`);
-            const result = await response.json();
-            
-            if (result.requiresAuth) {
-              setRequiresAuth(true);
-              setAccessType(result.accessType);
-              setError(result.message);
-            } else {
-              setError(result.message || 'Profile not found');
-            }
-          } catch {
-            setError(errorMessage);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (params.username) {
+    if (username) {
       fetchPublicProfile();
     }
-  }, [params.username, accessToken]);
+  }, [username, accessToken]);
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    setPasswordError('');
-
+  const fetchPublicProfile = async (token = null) => {
     try {
-      const result = await shareAPI.verifyPassword(params.username, password);
+      setLoading(true);
+      setError(null);
       
-      if (result.success && result.token) {
-        setAccessToken(result.token);
-        // Reload page with token
-        window.location.href = `${window.location.pathname}?token=${result.token}`;
+      const tokenToUse = token || accessToken;
+      console.log('Fetching public profile for:', username, 'with token:', tokenToUse);
+      const { response, result } = await shareAPI.getPublicProfile(username, tokenToUse);
+      
+      console.log('Response status:', response.status);
+      console.log('Result:', result);
+      
+      if (response.ok && result.success) {
+        setProfileData(result.data);
+        setRequiresAuth(false);
+        setAccessType(null);
+      } else if (response.status === 401 && result.requiresAuth) {
+        console.log('Authentication required:', result.accessType);
+        setRequiresAuth(true);
+        setAccessType(result.accessType);
+      } else {
+        console.error('Error response:', result);
+        setError(result.message || 'Failed to load profile');
+        setRequiresAuth(false);
       }
     } catch (err) {
-      setPasswordError(err.message || 'Incorrect password');
-      toast.error(err.message || 'Failed to verify password');
+      console.error('Fetch error:', err);
+      setError(err.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRequestOTP = async () => {
-    setOtpLoading(true);
-    setOtpError('');
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setVerifying(true);
+    setError(null);
 
     try {
-      const result = await shareAPI.requestOTP(params.username);
-      setOtpRequested(true);
+      console.log('🔐 Submitting password for username:', username);
+      const { response, result } = await shareAPI.verifyPassword(username, password);
       
-      // In development, show OTP in toast
-      if (result.otp) {
-        toast.success(`OTP: ${result.otp} (development mode)`);
+      console.log('✅ Password verify complete:', {
+        status: response.status,
+        success: result.success,
+        message: result.message,
+        token: result.token ? '✓' : '✗'
+      });
+      
+      if (response.ok && result.success) {
+        toast.success('Access granted!');
+        // Update URL with token without reload
+        const newUrl = `${window.location.pathname}?token=${result.token}`;
+        console.log('🔄 Updating URL:', newUrl);
+        window.history.replaceState(null, '', newUrl);
+        // Fetch profile with token
+        await fetchPublicProfile(result.token);
       } else {
-        toast.success('OTP sent! Check your email.');
+        console.error('❌ Password verification failed:', result);
+        toast.error(result.message || 'Invalid password');
+        setError(result.message || 'Invalid password');
       }
     } catch (err) {
-      setOtpError(err.message || 'Failed to request OTP');
-      toast.error(err.message || 'Failed to request OTP');
+      console.error('❌ Password verify error:', err);
+      toast.error(err.message || 'Failed to verify password');
+      setError(err.message || 'Failed to verify password');
     } finally {
-      setOtpLoading(false);
+      setVerifying(false);
+    }
+  };
+
+  const handleRequestOTP = async (e) => {
+    e.preventDefault();
+    setVerifying(true);
+    setError(null);
+
+    try {
+      const { response, result } = await shareAPI.requestOTP(username, email || null);
+      
+      console.log('OTP request response:', response.status, result);
+      
+      if (response.ok && result.success) {
+        toast.success(result.message || 'OTP sent successfully');
+        setOtpRequested(true);
+        setError(null);
+      } else {
+        toast.error(result.message || 'Failed to send OTP');
+        setError(result.message || 'Failed to send OTP');
+      }
+    } catch (err) {
+      console.error('OTP request error:', err);
+      toast.error(err.message || 'Failed to request OTP');
+      setError(err.message || 'Failed to request OTP');
+    } finally {
+      setVerifying(false);
     }
   };
 
   const handleOTPSubmit = async (e) => {
     e.preventDefault();
-    setOtpError('');
-
-    if (!otp || otp.length !== 6) {
-      setOtpError('Please enter a valid 6-digit OTP');
-      return;
-    }
+    setVerifying(true);
+    setError(null);
 
     try {
-      const result = await shareAPI.verifyOTP(params.username, otp);
+      const { response, result } = await shareAPI.verifyOTP(username, otp);
       
-      if (result.success && result.token) {
-        setAccessToken(result.token);
-        // Reload page with token
-        window.location.href = `${window.location.pathname}?token=${result.token}`;
+      console.log('OTP verify response:', response.status, result);
+      
+      if (response.ok && result.success) {
+        toast.success('Access granted!');
+        // Update URL with token without reload
+        const newUrl = `${window.location.pathname}?token=${result.token}`;
+        window.history.replaceState(null, '', newUrl);
+        // Fetch profile with token
+        await fetchPublicProfile(result.token);
+      } else {
+        toast.error(result.message || 'Invalid OTP');
+        setError(result.message || 'Invalid OTP');
       }
     } catch (err) {
-      setOtpError(err.message || 'Invalid OTP');
+      console.error('OTP verify error:', err);
       toast.error(err.message || 'Failed to verify OTP');
+      setError(err.message || 'Failed to verify OTP');
+    } finally {
+      setVerifying(false);
     }
   };
 
-  // Loading state
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      toast.success('Link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${profileData?.name || 'Shared'} Health Profile`,
+          text: 'View this health profile',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  // Authentication required state
-  if (requiresAuth && !profileData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              {accessType === 'password' ? (
-                <Lock className="w-8 h-8 text-blue-600" />
-              ) : (
-                <Key className="w-8 h-8 text-blue-600" />
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {accessType === 'password' ? 'Password Required' : 'OTP Verification Required'}
-            </h1>
-            <p className="text-gray-600">
-              {accessType === 'password' 
-                ? 'This profile is password protected. Please enter the password to continue.'
-                : 'This profile requires OTP verification. Please request and enter the OTP to continue.'}
-            </p>
-          </div>
-
-          {/* Password Form */}
-          {accessType === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    passwordError ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter password"
-                  required
-                />
-                {passwordError && (
-                  <p className="mt-1 text-sm text-red-600">{passwordError}</p>
-                )}
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Access Profile
-              </button>
-            </form>
-          )}
-
-          {/* OTP Form */}
-          {accessType === 'otp' && (
-            <div className="space-y-4">
-              {!otpRequested ? (
-                <button
-                  onClick={handleRequestOTP}
-                  disabled={otpLoading}
-                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
-                >
-                  {otpLoading ? 'Requesting...' : 'Request OTP'}
-                </button>
-              ) : (
-                <form onSubmit={handleOTPSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Enter OTP
-                    </label>
-                    <input
-                      type="text"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest ${
-                        otpError ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="000000"
-                      maxLength={6}
-                      required
-                    />
-                    {otpError && (
-                      <p className="mt-1 text-sm text-red-600">{otpError}</p>
-                    )}
-                    <p className="mt-2 text-sm text-gray-500">
-                      Check your email for the 6-digit code
-                    </p>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Verify OTP
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRequestOTP}
-                    disabled={otpLoading}
-                    className="w-full py-2 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
-                  >
-                    Resend OTP
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Error state (not auth-related)
   if (error && !requiresAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-8">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {error.includes('expired') ? 'Link Expired' : 'Profile Not Found'}
-          </h1>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Not Available</h1>
           <p className="text-gray-600">{error}</p>
         </div>
       </div>
     );
   }
 
-  // Profile display
+  // Password Auth Form
+  if (requiresAuth && accessType === 'password') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Protected Health Profile</h1>
+            <p className="text-gray-600">Please enter the password to view this profile</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={verifying}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {verifying ? 'Verifying...' : 'View Profile'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // OTP Auth Form
+  if (requiresAuth && accessType === 'otp') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Key className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Protected Health Profile</h1>
+            <p className="text-gray-600">Request an OTP to view this profile</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {!otpRequested ? (
+            <form onSubmit={handleRequestOTP} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address (Optional)
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={verifying}
+                className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {verifying ? 'Requesting...' : 'Request OTP'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleOTPSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter OTP
+                </label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  maxLength="6"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={verifying}
+                className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {verifying ? 'Verifying...' : 'Verify OTP'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setOtpRequested(false)}
+                className="w-full text-sm text-gray-600 hover:text-gray-900"
+              >
+                Request new OTP
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Profile Display
   if (!profileData) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Data</h1>
+          <p className="text-gray-600">Profile information not available</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">MyHealthLink</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Health Profile</h1>
+              <p className="text-gray-600">Shared health information</p>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>Shared Profile</span>
-              {accessToken && (
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                  <Check className="w-3 h-3 inline mr-1" />
-                  Protected
-                </span>
-              )}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+                <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center space-x-2 px-4 py-2 border border-green-600 text-green-700 rounded-lg hover:bg-green-50 transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share</span>
+              </button>
             </div>
           </div>
         </div>
@@ -342,9 +394,9 @@ export default function PublicProfilePage() {
 
       {/* Profile Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-8 text-white">
             <div className="flex items-center space-x-6">
               <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden relative">
                 {profileData.profilePicture ? (
@@ -362,86 +414,78 @@ export default function PublicProfilePage() {
               <div>
                 <h1 className="text-3xl font-bold">{profileData.name}</h1>
                 {profileData.dateOfBirth && (
-                  <p className="text-blue-100 mt-1">
-                    {new Date().getFullYear() - new Date(profileData.dateOfBirth).getFullYear()} years old
+                  <p className="text-green-100 mt-1">
+                    Age: {new Date().getFullYear() - new Date(profileData.dateOfBirth).getFullYear()} years
                   </p>
                 )}
-                {profileData.bloodType && (
-                  <p className="text-blue-100 mt-1">Blood Type: {profileData.bloodType}</p>
+                {profileData.gender && (
+                  <p className="text-green-100 mt-1 capitalize">{profileData.gender}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Profile Information */}
+          {/* Medical Information */}
           <div className="p-6 space-y-6">
-            {/* Emergency Contact */}
-            {profileData.emergencyContact && (
+            {/* Blood Type */}
+            {profileData.bloodType && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-                <div className="flex items-center mb-4">
-                  <AlertTriangle className="h-6 w-6 text-red-600 mr-2" />
-                  <h2 className="text-xl font-semibold text-red-900">Emergency Contact</h2>
+                <div className="flex items-center mb-3">
+                  <Heart className="h-6 w-6 text-red-600 mr-2" />
+                  <h2 className="text-xl font-bold text-red-900">Blood Type</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-red-600 font-medium">Contact Name</p>
-                    <p className="text-red-900 font-semibold">{profileData.emergencyContact.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-red-600 font-medium">Phone</p>
-                    <p className="text-red-900 font-semibold">{profileData.emergencyContact.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-red-600 font-medium">Relationship</p>
-                    <p className="text-red-900 font-semibold">{profileData.emergencyContact.relationship}</p>
-                  </div>
-                </div>
+                <p className="text-2xl font-bold text-red-900">{profileData.bloodType}</p>
               </div>
             )}
 
-            {/* Medical Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Allergies */}
-              {profileData.allergies && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
-                  <div className="flex items-center mb-3">
-                    <Shield className="h-5 w-5 text-orange-600 mr-2" />
-                    <h3 className="text-lg font-semibold text-orange-900">Allergies</h3>
-                  </div>
-                  <p className="text-orange-800">{profileData.allergies}</p>
+            {/* Allergies */}
+            {profileData.allergies && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
+                <div className="flex items-center mb-3">
+                  <Shield className="h-6 w-6 text-orange-600 mr-2" />
+                  <h2 className="text-xl font-bold text-orange-900">Allergies & Reactions</h2>
                 </div>
-              )}
+                <p className="text-orange-900 text-lg leading-relaxed">{profileData.allergies}</p>
+              </div>
+            )}
 
-              {/* Basic Info */}
-              {profileData.dateOfBirth && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Basic Information</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-gray-700">
-                        DOB: {new Date(profileData.dateOfBirth).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {profileData.gender && (
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 text-gray-500 mr-2" />
-                        <span className="text-gray-700 capitalize">Gender: {profileData.gender}</span>
-                      </div>
-                    )}
-                  </div>
+            {/* Emergency Contact */}
+            {profileData.emergencyContact && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-center mb-4">
+                  <Phone className="h-6 w-6 text-blue-600 mr-2" />
+                  <h2 className="text-xl font-bold text-blue-900">Emergency Contact</h2>
                 </div>
-              )}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-blue-700 font-semibold mb-1">Contact Name</p>
+                    <p className="text-lg font-bold text-blue-900">{profileData.emergencyContact.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-700 font-semibold mb-1">Phone Number</p>
+                    <a 
+                      href={`tel:${profileData.emergencyContact.phone}`}
+                      className="text-lg font-bold text-blue-900 hover:text-blue-700"
+                    >
+                      {profileData.emergencyContact.phone}
+                    </a>
+                  </div>
+                  {profileData.emergencyContact.relationship && (
+                    <div>
+                      <p className="text-sm text-blue-700 font-semibold mb-1">Relationship</p>
+                      <p className="text-lg font-semibold text-blue-900">{profileData.emergencyContact.relationship}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="max-w-4xl mx-auto px-4 py-6 text-center text-gray-600">
-        <p className="text-sm">
-          This profile was shared via MyHealthLink - One Link for Your Health
-        </p>
+        {/* Footer Notice */}
+        <div className="mt-6 text-center text-sm text-gray-600">
+          <p>This information is shared securely with authorized access only.</p>
+        </div>
       </div>
     </div>
   );

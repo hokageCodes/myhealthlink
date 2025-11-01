@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, ArrowLeft, Lock, Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -93,22 +94,22 @@ function ResetPasswordInner() {
 
   if (!isValidToken) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-neutral-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Heart className="h-8 w-8 text-blue-600" />
+            <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Heart className="h-8 w-8 text-brand-600" />
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-4">
               Validating Reset Link
             </h1>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-neutral-600 mb-6">
               Please wait while we validate your password reset link...
             </p>
 
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mx-auto"></div>
           </div>
         </div>
       </div>
@@ -116,67 +117,34 @@ function ResetPasswordInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
-      {/* Left Side */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
-          <div className="text-center mb-8">
-            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
-            <h1 className="text-4xl font-bold mb-4">New Password</h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Create a strong password for your account
-            </p>
-          </div>
-
-          <div className="space-y-6 max-w-md">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Lock className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Strong Password</h3>
-                <p className="text-blue-100 text-sm">
-                  Use a combination of letters, numbers, and symbols
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Heart className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Secure Access</h3>
-                <p className="text-blue-100 text-sm">
-                  Your health data will be protected
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute bottom-20 left-20 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute top-1/2 right-10 w-16 h-16 bg-white bg-opacity-10 rounded-full"></div>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-neutral-100">
+        <Image
+          src="https://images.unsplash.com/photo-1628191010213-5cda41d65442?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+          alt="Security and privacy"
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto w-full">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-8 lg:px-12 xl:px-16 bg-white">
+        <div className="max-w-lg mx-auto w-full">
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">
+              <Heart className="h-8 w-8 text-brand-600" />
+              <span className="text-2xl font-bold text-neutral-900">
                 MyHealthLink
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
               Reset Password
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               Create a new password for your account
             </p>
           </div>
@@ -185,32 +153,32 @@ function ResetPasswordInner() {
           <div className="hidden lg:block mb-8">
             <Link
               href="/login"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+              className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-6"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Login
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">
               Reset Password
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               Create a new password for your account
             </p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-10 lg:p-12">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* New Password */}
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-base font-semibold text-neutral-900 mb-3"
                 >
                   New Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
@@ -221,18 +189,18 @@ function ResetPasswordInner() {
                         message: 'Password must be at least 6 characters',
                       },
                     })}
-                    className="input w-full pl-10 pr-10"
+                    className="input w-full pl-11 pr-11 py-3.5 text-base border-neutral-300 focus:border-brand-500 focus:ring-brand-500"
                     placeholder="Enter your new password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
+                      <EyeOff className="h-5 w-5 text-neutral-400" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
+                      <Eye className="h-5 w-5 text-neutral-400" />
                     )}
                   </button>
                 </div>
@@ -247,12 +215,12 @@ function ResetPasswordInner() {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-base font-semibold text-neutral-900 mb-3"
                 >
                   Confirm New Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
@@ -263,7 +231,7 @@ function ResetPasswordInner() {
                         message: 'Password must be at least 6 characters',
                       },
                     })}
-                    className="input w-full pl-10 pr-10"
+                    className="input w-full pl-11 pr-11 py-3.5 text-base border-neutral-300 focus:border-brand-500 focus:ring-brand-500"
                     placeholder="Confirm your new password"
                   />
                   <button
@@ -271,12 +239,12 @@ function ResetPasswordInner() {
                     onClick={() =>
                       setShowConfirmPassword(!showConfirmPassword)
                     }
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
+                      <EyeOff className="h-5 w-5 text-neutral-400" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
+                      <Eye className="h-5 w-5 text-neutral-400" />
                     )}
                   </button>
                 </div>
@@ -289,10 +257,10 @@ function ResetPasswordInner() {
 
               {/* Password Requirements */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                <h4 className="text-sm font-medium text-neutral-700 mb-2">
                   Password Requirements:
                 </h4>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <ul className="text-sm text-neutral-600 space-y-1">
                   <li>• At least 6 characters long</li>
                   <li>• Mix of letters and numbers</li>
                   <li>• Avoid common passwords</li>
@@ -303,18 +271,18 @@ function ResetPasswordInner() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary w-full py-3 text-lg font-semibold"
+                className="btn btn-primary w-full py-4 text-base font-semibold mt-8"
               >
                 {isLoading ? 'Resetting...' : 'Reset Password'}
               </button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-neutral-600">
                 Remember your password?{' '}
                 <Link
                   href="/login"
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-brand-600 hover:text-brand-700 font-medium"
                 >
                   Sign in here
                 </Link>
@@ -332,7 +300,7 @@ export default function ResetPassword() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-2 border-brand-500 border-t-transparent rounded-full" />
         </div>
       }
     >

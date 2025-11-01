@@ -2,8 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,9 +37,9 @@ export default function RootLayout({ children }) {
       <body className={`${inter.variable} font-sans`}>
         <ThemeProvider>
           <Providers>
-            <Navbar />
-            {children}
-            <Footer />
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
           </Providers>
         </ThemeProvider>
       </body>

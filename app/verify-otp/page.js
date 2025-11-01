@@ -2,7 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Heart, ArrowLeft, RefreshCw, Mail, Shield } from 'lucide-react';
+import Image from 'next/image';
+import { Heart, ArrowLeft, RefreshCw, Mail } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import Link from 'next/link';
@@ -18,23 +19,23 @@ const OTPSchema = Yup.object().shape({
 // Loading fallback component
 function VerifyOTPLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
-      {/* Left Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
-          <div className="text-center mb-8">
-            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
-            <h1 className="text-4xl font-bold mb-4">Verify Email</h1>
-            <p className="text-xl text-blue-100 mb-8">Complete your account setup</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-neutral-100">
+        <Image
+          src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+          alt="Email verification"
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
       </div>
 
       {/* Right Side - Loading State */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-md mx-auto w-full">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-10 lg:p-12">
             <div className="animate-pulse space-y-6">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               <div className="h-12 bg-gray-200 rounded"></div>
@@ -96,10 +97,10 @@ function VerifyOTPContent() {
 
   if (!email) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-brand-50 to-neutral-100 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Request</h1>
-          <p className="text-gray-600 mb-6">No email address provided for verification.</p>
+          <h1 className="text-2xl font-bold text-neutral-900 mb-4">Invalid Request</h1>
+          <p className="text-neutral-600 mb-6">No email address provided for verification.</p>
           <Link href="/register" className="btn btn-primary">
             Back to Registration
           </Link>
@@ -109,61 +110,34 @@ function VerifyOTPContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
-      {/* Left Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
-          <div className="text-center mb-8">
-            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
-            <h1 className="text-4xl font-bold mb-4">Verify Email</h1>
-            <p className="text-xl text-blue-100 mb-8">Complete your account setup</p>
-          </div>
-          
-          <div className="space-y-6 max-w-md">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Mail className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Check Your Email</h3>
-                <p className="text-blue-100 text-sm">We have sent a verification code</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Shield className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Secure Verification</h3>
-                <p className="text-blue-100 text-sm">Your account will be protected</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute bottom-20 left-20 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
-        <div className="absolute top-1/2 right-10 w-16 h-16 bg-white bg-opacity-10 rounded-full"></div>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-neutral-100">
+        <Image
+          src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+          alt="Email verification"
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto w-full">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-8 lg:px-12 xl:px-16 bg-white">
+        <div className="max-w-lg mx-auto w-full">
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">MyHealthLink</span>
+              <Heart className="h-8 w-8 text-brand-600" />
+              <span className="text-2xl font-bold text-neutral-900">MyHealthLink</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
               Verify Your Email
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               We have sent a verification code to<br />
-              <span className="font-medium text-gray-900">{email}</span>
+              <span className="font-medium text-neutral-900">{email}</span>
             </p>
           </div>
 
@@ -171,22 +145,22 @@ function VerifyOTPContent() {
           <div className="hidden lg:block mb-8">
             <Link 
               href="/register" 
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+              className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-6"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Registration
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">
               Verify Your Email
             </h1>
-            <p className="text-gray-600">
+            <p className="text-neutral-600">
               We have sent a verification code to<br />
-              <span className="font-medium text-gray-900">{email}</span>
+              <span className="font-medium text-neutral-900">{email}</span>
             </p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-10 lg:p-12">
             <Formik
               initialValues={{
                 otp: '',
@@ -198,14 +172,14 @@ function VerifyOTPContent() {
                 <Form className="space-y-6">
                   {/* OTP Input */}
                   <div>
-                    <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="otp" className="block text-base font-semibold text-neutral-900 mb-3">
                       Verification Code
                     </label>
                     <Field
                       type="text"
                       id="otp"
                       name="otp"
-                      className={`input w-full text-center text-2xl tracking-widest ${errors.otp && touched.otp ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                      className={`input w-full text-center text-2xl tracking-widest py-4 ${errors.otp && touched.otp ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-neutral-300 focus:border-brand-500 focus:ring-brand-500'}`}
                       placeholder="000000"
                       maxLength={6}
                     />
@@ -216,7 +190,7 @@ function VerifyOTPContent() {
                   <button
                     type="submit"
                     disabled={verifyOTPMutation.isPending || isSubmitting}
-                    className="btn btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary w-full py-4 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed mt-8"
                   >
                     {verifyOTPMutation.isPending ? 'Verifying...' : 'Verify Email'}
                   </button>
@@ -226,7 +200,7 @@ function VerifyOTPContent() {
 
             {/* Resend OTP */}
             <div className="mt-6 text-center">
-              <p className="text-gray-600 mb-4">
+              <p className="text-neutral-600 mb-4">
                 Didnt receive the code?
               </p>
               <button
@@ -248,7 +222,7 @@ function VerifyOTPContent() {
 
           {/* Help */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-neutral-500">
               Check your spam folder if you dont see the email.
             </p>
           </div>

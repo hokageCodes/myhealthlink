@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
@@ -25,14 +25,9 @@ export default function ContactsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const token = getToken();
-      if (!token) throw new Error('No token');
-      return await authAPI.profile.get(token);
-    },
-  });
+  // Get user profile from cache (layout fetches it)
+  const userData = queryClient.getQueryData(['userProfile']);
+  const isLoading = !userData;
 
   const [contacts, setContacts] = useState([]);
   const [newContact, setNewContact] = useState({
@@ -44,7 +39,7 @@ export default function ContactsPage() {
   });
 
   // Initialize contacts from user data
-  useState(() => {
+  useEffect(() => {
     if (userData?.data?.contacts) {
       setContacts(userData.data.contacts);
     }

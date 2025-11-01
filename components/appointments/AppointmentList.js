@@ -36,75 +36,8 @@ const AppointmentList = ({
   const [sortBy, setSortBy] = useState('date');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // Sample appointments data
-  const defaultAppointments = [
-    {
-      id: 1,
-      title: 'Dr. Sarah Johnson - Annual Checkup',
-      doctor: 'Dr. Sarah Johnson',
-      specialization: 'General Medicine',
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      time: '10:00 AM',
-      duration: 30,
-      location: 'Main Hospital - Building A',
-      type: 'checkup',
-      status: 'confirmed',
-      notes: 'Annual health checkup and blood work',
-      contactPhone: '+1 (555) 123-4567',
-      contactEmail: 'patient@example.com',
-      urgency: 'normal'
-    },
-    {
-      id: 2,
-      title: 'Dr. Michael Smith - Cardiology Follow-up',
-      doctor: 'Dr. Michael Smith',
-      specialization: 'Cardiology',
-      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-      time: '2:30 PM',
-      duration: 45,
-      location: 'Health Center - Downtown',
-      type: 'followup',
-      status: 'pending',
-      notes: 'Follow-up on heart condition monitoring',
-      contactPhone: '+1 (555) 987-6543',
-      contactEmail: 'patient2@example.com',
-      urgency: 'high'
-    },
-    {
-      id: 3,
-      title: 'Lab Tests - Blood Work',
-      doctor: 'Lab Technician',
-      specialization: 'Laboratory',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
-      time: '9:00 AM',
-      duration: 60,
-      location: 'Lab Building - Floor 2',
-      type: 'lab',
-      status: 'confirmed',
-      notes: 'Comprehensive blood panel and cholesterol check',
-      contactPhone: '+1 (555) 456-7890',
-      contactEmail: 'patient3@example.com',
-      urgency: 'normal'
-    },
-    {
-      id: 4,
-      title: 'Dr. Emily Davis - Dermatology Consultation',
-      doctor: 'Dr. Emily Davis',
-      specialization: 'Dermatology',
-      date: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday (completed)
-      time: '11:15 AM',
-      duration: 30,
-      location: 'Clinic - Westside',
-      type: 'consultation',
-      status: 'completed',
-      notes: 'Skin condition evaluation and treatment plan',
-      contactPhone: '+1 (555) 321-0987',
-      contactEmail: 'patient4@example.com',
-      urgency: 'low'
-    }
-  ];
-
-  const appointmentsToShow = appointments.length > 0 ? appointments : defaultAppointments;
+  // Use only real appointments data from props
+  const appointmentsToShow = appointments;
 
   // Filter and sort appointments
   const filteredAppointments = appointmentsToShow

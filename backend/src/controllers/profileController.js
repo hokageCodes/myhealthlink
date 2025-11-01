@@ -12,6 +12,18 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // Ensure user has a username
+    if (!user.username) {
+      let username = User.generateUsername(user.name);
+      let usernameExists = await User.findOne({ username });
+      while (usernameExists) {
+        username = User.generateUsername(user.name);
+        usernameExists = await User.findOne({ username });
+      }
+      user.username = username;
+      await user.save();
+    }
+
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -48,6 +60,7 @@ const updateProfile = async (req, res) => {
         name: emergencyContact.name === '' ? null : emergencyContact.name,
         phone: emergencyContact.phone === '' ? null : emergencyContact.phone,
         relationship: emergencyContact.relationship === '' ? null : emergencyContact.relationship,
+        linkedUsername: emergencyContact.linkedUsername === '' ? null : emergencyContact.linkedUsername,
       };
     }
     if (isPublicProfile !== undefined) user.isPublicProfile = isPublicProfile;
@@ -138,8 +151,43 @@ const uploadProfilePicture = async (req, res) => {
   }
 };
 
+// @desc    Search users by username (for linking emergency contacts)
+// @route   GET /api/profile/search/:username
+// @access  Private
+const searchByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    // Only search if username is provided and at least 3 characters
+    if (!username || username.length < 3) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username must be at least 3 characters' 
+      });
+    }
+
+    // Search for users with matching username (case-insensitive)
+    const users = await User.find({ 
+      username: { $regex: username, $options: 'i' },
+      _id: { $ne: req.user.userId } // Exclude current user
+    })
+    .select('username name profilePicture')
+    .limit(5) // Limit results
+    .lean();
+
+    res.status(200).json({ 
+      success: true, 
+      data: users 
+    });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   uploadProfilePicture,
+  searchByUsername,
 };

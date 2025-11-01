@@ -1,11 +1,39 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Heart, Menu, X, User, LogOut, Settings } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useAuth, useLogout } from '@/lib/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
+import Image from 'next/image';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const logoutMutation = useLogout();
+  const queryClient = useQueryClient();
+
+  // Get user data from cache
+  const userData = queryClient.getQueryData(['userProfile']);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    setProfileDropdownOpen(false);
+  };
 
   const navLinks = [
     { href: '/services', label: 'Services' },
@@ -62,20 +90,76 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop CTA Buttons */}
+          {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-neutral-700 hover:text-brand-600 font-medium transition-colors duration-200"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-full shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-            >
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+                >
+                  {userData?.profilePicture ? (
+                    <Image
+                      src={userData.profilePicture}
+                      alt={userData.name || 'User'}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <User className="w-4 h-4 text-green-600" />
+                    </div>
+                  )}
+                  <span className="text-neutral-700 font-medium">{userData?.name || 'User'}</span>
+                </button>
+
+                {/* Profile Dropdown */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-50">
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 transition-colors"
+                    >
+                      <User className="w-4 h-4 text-neutral-600" />
+                      <span className="text-neutral-700">Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-neutral-600" />
+                      <span className="text-neutral-700">Settings</span>
+                    </Link>
+                    <div className="border-t border-neutral-200 my-1" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-2 px-4 py-2 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <LogOut className="w-4 h-4 text-red-600" />
+                      <span className="text-red-600 font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-neutral-700 hover:text-green-600 font-medium transition-colors duration-200"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -107,22 +191,59 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <div className="pt-3 border-t border-neutral-200 flex flex-col space-y-2">
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2.5 text-center text-neutral-700 hover:text-brand-600 hover:bg-brand-50 rounded-lg font-medium transition-all duration-200"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2.5 text-center bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-full shadow-md transition-all duration-200"
-                >
-                  Get Started
-                </Link>
-              </div>
+              {isAuthenticated ? (
+                <div className="pt-3 border-t border-neutral-200 flex flex-col space-y-2">
+                  <div className="flex items-center space-x-3 px-4 py-2">
+                    {userData?.profilePicture ? (
+                      <Image
+                        src={userData.profilePicture}
+                        alt={userData.name || 'User'}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <User className="w-4 h-4 text-green-600" />
+                      </div>
+                    )}
+                    <span className="text-neutral-700 font-medium">{userData?.name || 'User'}</span>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2.5 text-center text-neutral-700 hover:text-green-600 hover:bg-green-50 rounded-lg font-medium transition-all duration-200"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-2.5 text-center text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all duration-200"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-neutral-200 flex flex-col space-y-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2.5 text-center text-neutral-700 hover:text-green-600 hover:bg-green-50 rounded-lg font-medium transition-all duration-200"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2.5 text-center bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-md transition-all duration-200"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}
