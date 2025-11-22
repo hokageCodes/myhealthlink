@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 
 export default function CTASection() {
   return (
-    <div className="bg-white p-12 text-center">
+    <section id="contact" className="bg-white p-12 text-center">
     <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-8 rounded-2xl border border-brand-200">
       <div className="flex-1 text-left">
         <h3 className="text-2xl font-bold font-heading text-neutral-900 mb-2">
@@ -22,7 +22,7 @@ export default function CTASection() {
         Start Free Today
       </a>
     </div>
-  </div>
+    </section>
   );
 }
 

@@ -85,7 +85,7 @@ export default function FeaturesListSection() {
   const rightFeatures = features.slice(mid);
 
   return (
-    <section className="relative py-12 lg:py-16 bg-white overflow-hidden">
+    <section id="features-list" className="relative py-12 lg:py-16 bg-white overflow-hidden">
       <div className="container mx-auto px-4 lg:px-6 relative">
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">

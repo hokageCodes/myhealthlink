@@ -43,13 +43,16 @@ export default function LoginScreen() {
           type: 'error',
           text1: 'Login Failed',
           text2: result.message || 'Invalid credentials',
+          visibilityTime: 4000,
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'An unexpected error occurred',
+        text2: error.message || 'An unexpected error occurred',
+        visibilityTime: 4000,
       });
     } finally {
       setSubmitting(false);

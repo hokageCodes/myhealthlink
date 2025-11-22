@@ -58,7 +58,7 @@ export default function FAQSection() {
   ];
 
   return (
-    <section className="py-12 lg:py-16 bg-white">
+    <section id="faqs" className="py-12 lg:py-16 bg-white">
       <div className="container mx-auto px-4 lg:px-6">
         
         {/* Section Header */}

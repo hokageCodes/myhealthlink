@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="bg-white relative overflow-hidden bg-background mt-[-20px]">
+    <section id="home" className="bg-white relative overflow-hidden bg-background mt-[-20px]">
       {/* Main Container */}
       <div className="relative container flex flex-col items-center justify-center py-16 text-center lg:py-16">
         {/* Subheading */}

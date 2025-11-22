@@ -6,19 +6,15 @@ import { motion } from 'framer-motion';
 import { 
   Heart, 
   FileText, 
-  Calendar,
-  BarChart3,
   User,
   Activity,
-  Clock,
-  Eye,
-  Download,
   ArrowUpRight,
-  TrendingUp,
   Shield,
-  Zap,
   Plus,
-  Share2
+  Share2,
+  Phone,
+  Eye,
+  Download
 } from 'lucide-react';
 import Link from 'next/link';
 import { documentsAPI } from '@/lib/api/documents';
@@ -102,7 +98,6 @@ export default function Dashboard() {
     {
       label: 'Total Documents',
       value: documents.length,
-      change: '+12%',
       icon: FileText,
       color: 'brand',
       href: '/dashboard/documents'
@@ -110,30 +105,27 @@ export default function Dashboard() {
     {
       label: 'Health Records',
       value: metrics.length,
-      change: '+8%',
       icon: Activity,
       color: 'accent',
       href: '/dashboard/health'
     },
     {
-      label: 'Health Score',
-      value: `${healthScore}%`,
-      change: '+5%',
-      icon: Heart,
-      color: 'success',
-      href: '/dashboard/analytics'
-    },
-    {
-      label: 'Profile Views',
-      value: '0',
-      change: '0%',
-      icon: Eye,
-      color: 'warning',
-      href: '/dashboard/privacy'
+      label: 'Emergency Contacts',
+      value: userData?.emergencyContact?.name ? '1' : '0',
+      icon: Phone,
+      color: 'danger',
+      href: '/dashboard/contacts'
     }
   ];
 
   const quickActions = [
+    {
+      name: 'Share Profile',
+      icon: Share2,
+      color: 'accent',
+      href: '/dashboard/privacy',
+      description: 'Generate QR code & link'
+    },
     {
       name: 'Upload Document',
       icon: Plus,
@@ -149,18 +141,11 @@ export default function Dashboard() {
       description: 'Record vitals'
     },
     {
-      name: 'Share Profile',
-      icon: Share2,
-      color: 'accent',
-      href: '/dashboard/privacy',
-      description: 'Generate QR code'
-    },
-    {
-      name: 'View Analytics',
-      icon: BarChart3,
-      color: 'success',
-      href: '/dashboard/analytics',
-      description: 'Health insights'
+      name: 'Emergency Contacts',
+      icon: Phone,
+      color: 'warning',
+      href: '/dashboard/contacts',
+      description: 'Manage contacts'
     }
   ];
 
@@ -228,10 +213,6 @@ export default function Dashboard() {
                     <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                       <stat.icon className="w-5 h-5 text-green-600" />
                     </div>
-                    <span className="text-green-600 text-xs font-medium flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      {stat.change}
-                    </span>
                   </div>
                   <h3 className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</h3>
                   <p className="text-gray-600 text-sm font-medium">{stat.label}</p>
@@ -273,14 +254,14 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Recent Health Metrics */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="lg:col-span-2 bg-white rounded-2xl p-6 border border-neutral-200 shadow-lg"
+            className="bg-white rounded-2xl p-6 border border-neutral-200 shadow-lg"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -327,7 +308,17 @@ export default function Dashboard() {
                     <p className="text-2xl font-bold text-gray-900 mb-1">
                       {metric.type === 'blood-pressure' 
                         ? `${metric.systolic}/${metric.diastolic}` 
-                        : metric.value?.numeric || metric.value}
+                        : (() => {
+                            const value = metric.value?.numeric || metric.value;
+                            // Handle object values (like blood pressure objects)
+                            if (typeof value === 'object' && value !== null) {
+                              if (value.systolic && value.diastolic) {
+                                return `${value.systolic}/${value.diastolic}`;
+                              }
+                              return String(value);
+                            }
+                            return value;
+                          })()}
                       <span className="text-sm font-normal text-gray-500 ml-1">
                         {metric.value?.unit || metric.unit}
                       </span>
@@ -354,52 +345,52 @@ export default function Dashboard() {
             )}
           </motion.div>
 
-          {/* Health Score Card */}
+          {/* Emergency Contact Preview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200"
+            className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-6 border border-red-200"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <Phone className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Health Score</h3>
-                <p className="text-gray-600 text-xs">Overall wellness</p>
+                <h3 className="text-lg font-bold text-gray-900">Emergency Contact</h3>
+                <p className="text-gray-600 text-xs">Quick access</p>
               </div>
             </div>
             
-            <div className="text-center py-6">
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.6, type: "spring" }}
-                className="text-5xl font-bold mb-4 text-gray-900"
-              >
-                {healthScore}%
-              </motion.div>
-              
-              <div className="w-full bg-green-100 rounded-full h-2 mb-6">
-                <motion.div 
-                  className="bg-green-600 h-2 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${healthScore}%` }}
-                  transition={{ duration: 1, delay: 0.8 }}
-                />
+            {userData?.emergencyContact?.name ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Name</p>
+                  <p className="text-lg font-semibold text-gray-900">{userData.emergencyContact.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Phone</p>
+                  <p className="text-lg font-semibold text-gray-900">{userData.emergencyContact.phone}</p>
+                </div>
+                {userData.emergencyContact.relationship && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Relationship</p>
+                    <p className="text-lg font-semibold text-gray-900">{userData.emergencyContact.relationship}</p>
+                  </div>
+                )}
               </div>
-              
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Based on your recent health metrics
-              </p>
-            </div>
+            ) : (
+              <div className="text-center py-6">
+                <Phone className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 text-sm mb-4">No emergency contact set</p>
+              </div>
+            )}
             
             <Link
-              href="/dashboard/analytics"
-              className="block w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-center font-semibold transition-all duration-200"
+              href="/dashboard/contacts"
+              className="block w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-center font-semibold transition-all duration-200 mt-6"
             >
-              View Detailed Report
+              {userData?.emergencyContact?.name ? 'Manage Contacts' : 'Add Emergency Contact'}
             </Link>
           </motion.div>
         </div>

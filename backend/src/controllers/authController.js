@@ -541,10 +541,47 @@ const logout = async (req, res) => {
   }
 };
 
+// Delete account
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Delete user and all associated data
+    // Note: This uses Mongoose cascading deletes if configured
+    await User.findByIdAndDelete(userId);
+
+    // Clear refresh token cookie
+    res.clearCookie('refreshToken');
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete account',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   verifyOTP,
   resendOTP,
-  logout
+  logout,
+  deleteAccount
 };

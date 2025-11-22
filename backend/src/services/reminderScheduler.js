@@ -1,158 +1,105 @@
 const cron = require('node-cron');
 const Reminder = require('../models/Reminder');
-const { sendReminderNotification } = require('./notificationService');
-const { checkMissedMedications } = require('./missedMedicationService');
-
-let schedulerRunning = false;
+const Notification = require('../models/Notification');
+const { sendNotification } = require('./notificationService');
 
 /**
- * Start the reminder scheduler
- * Runs every minute to check for due reminders
+ * Process reminders that need to be triggered
  */
-const startScheduler = () => {
-  if (schedulerRunning) {
-    console.log('Reminder scheduler is already running');
-    return;
-  }
-
-  console.log('🕐 Starting reminder scheduler...');
-
-  // Run every minute to check reminders
-  cron.schedule('* * * * *', async () => {
-    await checkAndTriggerReminders();
-  });
-
-  // Check for missed medications every 30 minutes
-  cron.schedule('*/30 * * * *', async () => {
-    try {
-      await checkMissedMedications();
-    } catch (error) {
-      console.error('Error in missed medication check:', error);
-    }
-  });
-
-  schedulerRunning = true;
-  console.log('✅ Reminder scheduler started (checking every minute)');
-};
-
-/**
- * Check for reminders that need to be triggered
- */
-const checkAndTriggerReminders = async () => {
+const processReminders = async () => {
   try {
     const now = new Date();
     
-    // Find reminders that are:
-    // 1. Active
-    // 2. Have a nextTrigger time that has passed or is within the next minute
-    // 3. Are scheduled for today (or once-time reminders)
+    // Find all active reminders where nextTrigger has passed
     const dueReminders = await Reminder.find({
       isActive: true,
-      nextTrigger: { $lte: new Date(now.getTime() + 60000) }, // Within next minute
-      $or: [
-        { frequency: 'once' }, // One-time reminders
-        { frequency: 'daily' },
-        { frequency: 'weekly', daysOfWeek: now.getDay() },
-        { frequency: 'monthly' },
-        { frequency: 'custom' }
-      ]
-    }).populate('user', 'email name');
+      nextTrigger: { $lte: now },
+    }).populate('user', 'name email phone');
 
-    if (dueReminders.length === 0) {
-      return; // No reminders due
-    }
-
-    console.log(`📬 Found ${dueReminders.length} reminder(s) to trigger`);
+    console.log(`[Reminder Scheduler] Found ${dueReminders.length} due reminders`);
 
     for (const reminder of dueReminders) {
       try {
-        await triggerReminder(reminder);
+        console.log(`[Reminder Scheduler] Processing reminder: ${reminder._id} - ${reminder.title}`);
+
+        // Send notifications
+        const notificationSent = await sendNotification(reminder.user._id, reminder);
+        
+        // Create notification record
+        if (notificationSent) {
+          await Notification.create({
+            userId: reminder.user._id,
+            type: 'reminder',
+            title: reminder.title,
+            message: reminder.description || `Reminder: ${reminder.title}`,
+            relatedEntity: {
+              id: reminder._id,
+              type: 'Reminder',
+            },
+            channels: {
+              email: reminder.notifications.email,
+              sms: reminder.notifications.sms,
+            },
+            emailSent: true,
+          });
+        }
+
+        // Update reminder
+        reminder.lastTriggered = now;
+        reminder.calculateNextTrigger();
+        await reminder.save();
+
+        console.log(`[Reminder Scheduler] Processed reminder: ${reminder._id}, next trigger: ${reminder.nextTrigger}`);
       } catch (error) {
-        console.error(`Error triggering reminder ${reminder._id}:`, error);
+        console.error(`[Reminder Scheduler] Error processing reminder ${reminder._id}:`, error);
         // Continue with other reminders even if one fails
       }
     }
+
+    return {
+      processed: dueReminders.length,
+      success: true,
+    };
   } catch (error) {
-    console.error('Error in reminder scheduler:', error);
+    console.error('[Reminder Scheduler] Error processing reminders:', error);
+    return {
+      processed: 0,
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 /**
- * Trigger a single reminder
+ * Start the reminder scheduler
  */
-const triggerReminder = async (reminder) => {
-  console.log(`🔔 Triggering reminder: ${reminder.title} (User: ${reminder.user?._id || reminder.user})`);
+const startScheduler = () => {
+  console.log('[Reminder Scheduler] Starting scheduler...');
 
-  try {
-    // Send notification
-    const userId = reminder.user?._id || reminder.user;
-    
-    if (!userId) {
-      console.warn(`Reminder ${reminder._id} has no user associated`);
-      return;
-    }
+  // Run every 15 minutes
+  // Cron format: minute hour day-of-month month day-of-week
+  cron.schedule('*/15 * * * *', async () => {
+    console.log('[Reminder Scheduler] Running scheduled check at', new Date().toISOString());
+    await processReminders();
+  });
 
-    await sendReminderNotification(reminder, userId);
+  console.log('[Reminder Scheduler] Scheduler started successfully (running every 15 minutes)');
 
-    // Update reminder
-    reminder.lastTriggered = new Date();
-    
-    // Calculate next trigger time
-    reminder.calculateNextTrigger();
-    
-    // If it's a one-time reminder and has passed, deactivate
-    if (reminder.frequency === 'once' && reminder.scheduledFor <= new Date()) {
-      reminder.isActive = false;
-      console.log(`Reminder ${reminder._id} deactivated (one-time completed)`);
-    }
-
-    await reminder.save();
-
-    console.log(`✅ Reminder triggered successfully: ${reminder.title}`);
-  } catch (error) {
-    console.error(`Error triggering reminder ${reminder._id}:`, error);
-    throw error;
-  }
+  // Run once immediately on startup (optional, for testing)
+  // processReminders();
 };
 
 /**
- * Manual trigger (for testing or immediate execution)
- */
-const triggerReminderById = async (reminderId) => {
-  try {
-    const reminder = await Reminder.findById(reminderId).populate('user', 'email name');
-    
-    if (!reminder) {
-      throw new Error('Reminder not found');
-    }
-
-    if (!reminder.isActive) {
-      throw new Error('Reminder is not active');
-    }
-
-    await triggerReminder(reminder);
-    return reminder;
-  } catch (error) {
-    console.error(`Error manually triggering reminder ${reminderId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Stop the scheduler (useful for graceful shutdown)
+ * Stop the scheduler
  */
 const stopScheduler = () => {
-  if (schedulerRunning) {
-    schedulerRunning = false;
-    console.log('⏹️  Reminder scheduler stopped');
-  }
+  console.log('[Reminder Scheduler] Stopping scheduler...');
+  // Note: node-cron doesn't have a built-in stop method
+  // We would need to store the scheduled task and destroy it
 };
 
 module.exports = {
   startScheduler,
   stopScheduler,
-  checkAndTriggerReminders,
-  triggerReminder,
-  triggerReminderById
+  processReminders,
 };
-

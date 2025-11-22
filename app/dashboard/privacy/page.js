@@ -218,24 +218,44 @@ export default function PrivacyPage() {
                 <p className="text-sm text-gray-600">Copy or share this link</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <p className="text-sm text-gray-700 font-mono break-all">{shareUrl}</p>
+            {!userData?.username ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 font-medium mb-2">
+                  ⚠️ Username is required to generate share link
+                </p>
+                <p className="text-xs text-red-700">
+                  Please set a username in your profile settings to enable sharing.
+                </p>
               </div>
-              <button
-                onClick={copyShareLink}
-                disabled={!userData?.isPublicProfile || updatePrivacyMutation.isPending}
-                className={`flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md ${
-                  (!userData?.isPublicProfile || updatePrivacyMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Share this link with healthcare providers, emergency contacts, or anyone who needs access to your health information.
-            </p>
+            ) : (
+              <>
+                <div className="flex items-center space-x-3">
+                  <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <p className="text-sm text-gray-700 font-mono break-all">{shareUrl}</p>
+                  </div>
+                  <button
+                    onClick={copyShareLink}
+                    disabled={!userData?.isPublicProfile || updatePrivacyMutation.isPending || !userData?.username}
+                    className={`flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md ${
+                      (!userData?.isPublicProfile || updatePrivacyMutation.isPending || !userData?.username) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copied ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </div>
+                {userData?.shareLinkSettings?.expiresAt && new Date(userData.shareLinkSettings.expiresAt) < new Date() && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium">
+                      ⚠️ Your share link has expired. Update the expiration setting below to fix this.
+                    </p>
+                  </div>
+                )}
+                <p className="text-sm text-gray-500 mt-2">
+                  Share this link with healthcare providers, emergency contacts, or anyone who needs access to your health information.
+                </p>
+              </>
+            )}
           </div>
           
           {/* Share Link Security Settings */}
@@ -266,7 +286,6 @@ export default function PrivacyPage() {
                 <option value="public">Public (No protection)</option>
                 <option value="password">Password Protected</option>
                 <option value="otp">OTP Protected</option>
-                <option value="none">Disabled</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 💡 Choose <strong>Password Protected</strong> to share a password with viewers
@@ -310,7 +329,10 @@ export default function PrivacyPage() {
                   const value = e.target.value;
                   let expiresAt = null;
                   
-                  if (value !== 'never' && value !== 'expired') {
+                  if (value === 'expired' || value === 'never') {
+                    // Remove expiry - set to null
+                    expiresAt = null;
+                  } else if (value !== 'never' && value !== 'expired') {
                     const now = new Date();
                     switch(value) {
                       case '7days':
@@ -337,9 +359,18 @@ export default function PrivacyPage() {
                 <option value="30days">Expires in 30 days</option>
                 <option value="90days">Expires in 90 days</option>
                 {userData?.shareLinkSettings?.expiresAt && (
-                  <option value="expired">Current: {new Date(userData.shareLinkSettings.expiresAt).toLocaleDateString()}</option>
+                  <option value="expired">
+                    {new Date(userData.shareLinkSettings.expiresAt) < new Date() 
+                      ? 'Expired - Remove expiry' 
+                      : `Current: ${new Date(userData.shareLinkSettings.expiresAt).toLocaleDateString()}`}
+                  </option>
                 )}
               </select>
+              {userData?.shareLinkSettings?.expiresAt && new Date(userData.shareLinkSettings.expiresAt) < new Date() && (
+                <p className="text-xs text-red-600 mt-2 font-medium">
+                  ⚠️ Your link has expired. Select "Expired - Remove expiry" above and save to fix this.
+                </p>
+              )}
               {userData?.shareLinkSettings?.expiresAt && (
                 <p className="mt-2 text-sm text-gray-500">
                   Link expires on: {new Date(userData.shareLinkSettings.expiresAt).toLocaleDateString()}

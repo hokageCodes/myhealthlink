@@ -17,11 +17,8 @@ import {
   Calendar,
   TrendingUp,
   TrendingDown,
-  Download,
-  Filter
 } from 'lucide-react';
 import { healthAPI } from '@/lib/api/health';
-import MetricChart from '@/components/health/MetricChart';
 
 const metricTypes = [
   {
@@ -77,18 +74,15 @@ const metricSchema = Yup.object({
 export default function HealthPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMetric, setEditingMetric] = useState(null);
-  const [selectedMetricType, setSelectedMetricType] = useState(null);
-  const [dateRange, setDateRange] = useState(30);
   const queryClient = useQueryClient();
 
   // Fetch health metrics
   const { data: metricsResponse, isLoading } = useQuery({
-    queryKey: ['healthMetrics', selectedMetricType],
+    queryKey: ['healthMetrics'],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) throw new Error('No token');
       const params = { limit: 100 };
-      if (selectedMetricType) params.type = selectedMetricType;
       const response = await healthAPI.getMetrics(token, params);
       // Handle both array and object responses
       if (Array.isArray(response)) {
@@ -103,17 +97,6 @@ export default function HealthPage() {
   });
 
   const metrics = Array.isArray(metricsResponse) ? metricsResponse : [];
-
-  // Fetch health summary
-  const { data: summary } = useQuery({
-    queryKey: ['healthSummary'],
-    queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token');
-      return await healthAPI.getSummary(token, 30);
-    },
-    staleTime: 60000, // 1 minute
-  });
 
   // Add metric mutation
   const addMetricMutation = useMutation({
@@ -213,92 +196,21 @@ export default function HealthPage() {
   };
 
   const formatValue = (metric) => {
-    if (metric.type === 'bloodPressure' && typeof metric.value === 'object') {
+    // Handle blood pressure objects
+    if (typeof metric.value === 'object' && metric.value !== null) {
+      if (metric.value.systolic && metric.value.diastolic) {
+        return `${metric.value.systolic}/${metric.value.diastolic}`;
+      }
+      // If it's an object but not blood pressure, convert to string
+      return String(metric.value);
+    }
+    // Handle blood pressure type check (support both 'bloodPressure' and 'blood-pressure')
+    if ((metric.type === 'bloodPressure' || metric.type === 'blood-pressure') && typeof metric.value === 'object') {
       return `${metric.value.systolic}/${metric.value.diastolic}`;
     }
     return metric.value;
   };
 
-  const handleExportPDF = async () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token');
-      
-      if (!metrics || metrics.length === 0) {
-        toast.error('No metrics to export');
-        return;
-      }
-      
-      // Dynamic import for jsPDF
-      const { default: jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      
-      // Add title
-      doc.setFontSize(18);
-      doc.text('Health Metrics Report', 14, 20);
-      doc.setFontSize(12);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 30);
-      
-      let yPos = 40;
-      
-      // Group metrics by type
-      const groupedMetrics = metrics.reduce((acc, metric) => {
-        if (!acc[metric.type]) acc[metric.type] = [];
-        acc[metric.type].push(metric);
-        return acc;
-      }, {});
-      
-      // Add metrics by type
-      Object.entries(groupedMetrics).forEach(([type, typeMetrics]) => {
-        const metricType = getMetricType(type);
-        if (!metricType) return;
-        
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        doc.setFontSize(14);
-        doc.text(metricType.name, 14, yPos);
-        yPos += 8;
-        
-        doc.setFontSize(10);
-        typeMetrics.forEach((metric) => {
-          if (yPos > 280) {
-            doc.addPage();
-            yPos = 20;
-          }
-          
-          try {
-            const dateStr = metric.date || metric.recordedAt || metric.createdAt;
-            const date = dateStr ? new Date(dateStr).toLocaleDateString() : 'Unknown';
-            const value = formatValue(metric);
-            const unit = metric.unit || '';
-            const text = `${date}: ${value}${unit ? ' ' + unit : ''}`;
-            
-            // Truncate long text
-            if (text.length > 80) {
-              doc.text(text.substring(0, 77) + '...', 20, yPos);
-            } else {
-              doc.text(text, 20, yPos);
-            }
-            yPos += 6;
-          } catch (err) {
-            console.error('Error formatting metric for PDF:', err);
-          }
-        });
-        
-        yPos += 5;
-      });
-      
-      // Save the PDF
-      doc.save(`health-metrics-report-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.success('PDF exported successfully');
-    } catch (error) {
-      console.error('PDF export error:', error);
-      toast.error('Failed to export PDF');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -329,49 +241,6 @@ export default function HealthPage() {
         </button>
       </div>
 
-      {/* Health Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {summary.latest.map((metric) => {
-            const metricType = getMetricType(metric._id);
-            if (!metricType) return null;
-            
-            return (
-              <div key={metric._id} className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        metricType.color === 'red' ? 'bg-red-100' :
-                        metricType.color === 'blue' ? 'bg-blue-100' :
-                        metricType.color === 'orange' ? 'bg-orange-100' :
-                        metricType.color === 'green' ? 'bg-green-100' :
-                        metricType.color === 'yellow' ? 'bg-yellow-100' : 'bg-gray-100'
-                      }`}>
-                      <metricType.icon className={`w-5 h-5 ${
-                        metricType.color === 'red' ? 'text-red-600' :
-                        metricType.color === 'blue' ? 'text-blue-600' :
-                        metricType.color === 'orange' ? 'text-orange-600' :
-                        metricType.color === 'green' ? 'text-green-600' :
-                        metricType.color === 'yellow' ? 'text-yellow-600' : 'text-gray-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{metricType.name}</p>
-                      <p className="text-xs text-gray-500">{metricType.description}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">
-                      {formatValue({ type: metric._id, value: metric.latestValue })}
-                    </p>
-                    <p className="text-xs text-gray-500">{metric.latestUnit}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Add/Edit Form */}
       {showAddForm && (
@@ -492,72 +361,11 @@ export default function HealthPage() {
         </div>
       )}
 
-      {/* Trend Charts */}
-      {metrics && metrics.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Trend Analysis</h3>
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedMetricType || ''}
-                onChange={(e) => setSelectedMetricType(e.target.value || null)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Metrics</option>
-                {metricTypes.map((type) => (
-                  <option key={type.type} value={type.type}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => handleExportPDF()}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export PDF</span>
-              </button>
-            </div>
-          </div>
 
-          {selectedMetricType ? (
-            <div className="mb-6">
-              <h4 className="text-md font-medium text-gray-700 mb-3">
-                {getMetricType(selectedMetricType)?.name || selectedMetricType} Trends
-              </h4>
-              <MetricChart
-                metrics={metrics.filter(m => m.type === selectedMetricType)}
-                type={selectedMetricType}
-                chartType="line"
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {metricTypes.map((metricType) => {
-                const typeMetrics = metrics.filter(m => m.type === metricType.type);
-                if (typeMetrics.length === 0) return null;
-                
-                return (
-                  <div key={metricType.type} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-md font-medium text-gray-700 mb-3">
-                      {metricType.name} Trends
-                    </h4>
-                    <MetricChart
-                      metrics={typeMetrics}
-                      type={metricType.type}
-                      chartType="line"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Recent Metrics */}
+      {/* Health Metrics List */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Measurements</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Health Records</h3>
+        <p className="text-sm text-gray-600 mb-6">Track your vitals over time to spot patterns and trends</p>
         
         {metrics && metrics.length > 0 ? (
           <div className="space-y-3">

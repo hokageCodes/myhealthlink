@@ -24,17 +24,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
+// MVP Navigation - Core features only
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
-  { name: 'Privacy & Sharing', href: '/dashboard/privacy', icon: Shield },
+  { name: 'Share Profile', href: '/dashboard/privacy', icon: Shield },
+  { name: 'Emergency Contacts', href: '/dashboard/contacts', icon: Phone },
   { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-  { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
   { name: 'Health Data', href: '/dashboard/health', icon: Heart },
-  { name: 'Health Goals', href: '/dashboard/health/goals', icon: Target },
-  { name: 'Emergency', href: '/dashboard/emergency', icon: Shield },
-  { name: 'Medications', href: '/dashboard/medications', icon: Pill },
-  { name: 'Contacts', href: '/dashboard/contacts', icon: Phone },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];

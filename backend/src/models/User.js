@@ -49,6 +49,11 @@ const userSchema = new mongoose.Schema({
     enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
     default: null
   },
+  genotype: {
+    type: String,
+    enum: ['AA', 'AS', 'SS', 'AC', 'SC', 'CC'],
+    default: null
+  },
   allergies: {
     type: String,
     maxlength: [500, 'Allergies description cannot exceed 500 characters']
@@ -65,6 +70,9 @@ const userSchema = new mongoose.Schema({
       maxlength: [50, 'Emergency contact name cannot exceed 50 characters']
     },
     phone: {
+      type: String
+    },
+    email: {
       type: String
     },
     relationship: {
@@ -85,8 +93,10 @@ const userSchema = new mongoose.Schema({
       maxlength: [50, 'Contact name cannot exceed 50 characters']
     },
     phone: {
-      type: String,
-      required: true
+      type: String
+    },
+    email: {
+      type: String
     },
     relationship: {
       type: String,
@@ -169,7 +179,7 @@ const userSchema = new mongoose.Schema({
   shareLinkSettings: {
     accessType: {
       type: String,
-      enum: ['public', 'password', 'otp', 'none'],
+      enum: ['public', 'password', 'otp'],
       default: 'public'
     },
     password: {

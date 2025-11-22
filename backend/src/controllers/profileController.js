@@ -37,9 +37,9 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { 
-      name, phone, dateOfBirth, gender, bloodType, allergies, 
-      emergencyContact, isPublicProfile, publicFields,
-      shareLinkSettings 
+      name, phone, dateOfBirth, gender, bloodType, genotype, allergies, chronicConditions,
+      emergencyContact, additionalContacts, isPublicProfile, publicFields,
+      shareLinkSettings, profilePicture 
     } = req.body;
 
     const user = await User.findById(req.user.userId);
@@ -54,14 +54,21 @@ const updateProfile = async (req, res) => {
     if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
     if (gender !== undefined) user.gender = gender;
     if (bloodType !== undefined) user.bloodType = bloodType === '' ? null : bloodType;
+    if (genotype !== undefined) user.genotype = genotype === '' ? null : genotype;
     if (allergies !== undefined) user.allergies = allergies === '' ? null : allergies;
+    if (chronicConditions !== undefined) user.chronicConditions = chronicConditions === '' ? null : chronicConditions;
+    if (profilePicture !== undefined) user.profilePicture = profilePicture;
     if (emergencyContact !== undefined) {
       user.emergencyContact = {
         name: emergencyContact.name === '' ? null : emergencyContact.name,
         phone: emergencyContact.phone === '' ? null : emergencyContact.phone,
+        email: emergencyContact.email === '' ? null : emergencyContact.email,
         relationship: emergencyContact.relationship === '' ? null : emergencyContact.relationship,
         linkedUsername: emergencyContact.linkedUsername === '' ? null : emergencyContact.linkedUsername,
       };
+    }
+    if (additionalContacts !== undefined) {
+      user.additionalContacts = additionalContacts;
     }
     if (isPublicProfile !== undefined) user.isPublicProfile = isPublicProfile;
     if (publicFields !== undefined) user.publicFields = publicFields;

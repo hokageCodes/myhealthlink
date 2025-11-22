@@ -11,7 +11,9 @@ import {
   Phone,
   Lock,
   Key,
-  AlertTriangle
+  AlertTriangle,
+  Calendar,
+  Pill
 } from 'lucide-react';
 import Image from 'next/image';
 import { shareAPI } from '@/lib/api/share';
@@ -438,6 +440,39 @@ export default function PublicSharePage() {
               </div>
             )}
 
+            {/* Genotype */}
+            {profileData.genotype && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                <div className="flex items-center mb-3">
+                  <Heart className="h-6 w-6 text-yellow-600 mr-2" />
+                  <h2 className="text-xl font-bold text-yellow-900">Genotype</h2>
+                </div>
+                <p className="text-2xl font-bold text-yellow-900">{profileData.genotype}</p>
+              </div>
+            )}
+
+            {/* Age */}
+            {profileData.dateOfBirth && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                <div className="flex items-center mb-3">
+                  <Calendar className="h-6 w-6 text-purple-600 mr-2" />
+                  <h2 className="text-xl font-bold text-purple-900">Age</h2>
+                </div>
+                <p className="text-2xl font-bold text-purple-900">
+                  {(() => {
+                    const birthDate = new Date(profileData.dateOfBirth);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    return age;
+                  })()} years old
+                </p>
+              </div>
+            )}
+
             {/* Allergies */}
             {profileData.allergies && (
               <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
@@ -446,6 +481,17 @@ export default function PublicSharePage() {
                   <h2 className="text-xl font-bold text-orange-900">Allergies & Reactions</h2>
                 </div>
                 <p className="text-orange-900 text-lg leading-relaxed">{profileData.allergies}</p>
+              </div>
+            )}
+
+            {/* Current Medications */}
+            {profileData.currentMedications && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
+                <div className="flex items-center mb-3">
+                  <Pill className="h-6 w-6 text-indigo-600 mr-2" />
+                  <h2 className="text-xl font-bold text-indigo-900">Current Medications</h2>
+                </div>
+                <p className="text-indigo-900 text-lg leading-relaxed whitespace-pre-line">{profileData.currentMedications}</p>
               </div>
             )}
 

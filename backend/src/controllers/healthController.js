@@ -31,15 +31,17 @@ const getHealthMetrics = async (req, res) => {
 
     // Decrypt notes for all metrics
     const decryptedMetrics = metrics.map(metric => {
-      if (metric.notes) {
+      const metricObj = metric.toObject();
+      if (metricObj.notes) {
         try {
-          metric.notes = decrypt(metric.notes);
+          metricObj.notes = decrypt(metricObj.notes);
         } catch (e) {
           // If decryption fails, notes might not be encrypted (old data)
-          console.warn('Could not decrypt notes for metric:', metric._id);
+          console.warn('Could not decrypt notes for metric:', metricObj._id);
+          // Keep the encrypted value as fallback
         }
       }
-      return metric;
+      return metricObj;
     });
 
     res.status(200).json({

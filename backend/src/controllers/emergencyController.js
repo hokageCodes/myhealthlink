@@ -1,7 +1,9 @@
 const EmergencyEvent = require('../models/EmergencyEvent');
 const User = require('../models/User');
 const crypto = require('crypto');
-const { createNotification } = require('../services/notificationService');
+const { sendSOS, generateEmergencyMessage } = require('../services/smsService');
+const { sendSOSEmail } = require('../utils/email');
+const Notification = require('../models/Notification');
 
 // @desc    Trigger emergency SOS event
 // @route   POST /api/emergency/sos
@@ -12,7 +14,7 @@ const triggerSOS = async (req, res) => {
     const { location, notes } = req.body;
 
     // Get user with emergency contacts
-    const user = await User.findById(userId).select('emergencyContact additionalContacts emergencyMode');
+    const user = await User.findById(userId).select('name username emergencyContact additionalContacts emergencyMode');
 
     if (!user) {
       return res.status(404).json({
@@ -37,53 +39,107 @@ const triggerSOS = async (req, res) => {
     // Prepare contacts to notify
     const contactsToNotify = [];
     
-    if (user.emergencyContact && user.emergencyContact.name && user.emergencyContact.phone) {
+    if (user.emergencyContact && user.emergencyContact.name && (user.emergencyContact.phone || user.emergencyContact.email)) {
       contactsToNotify.push({
         contact: user.emergencyContact,
-        method: 'sms' // Default to SMS
+        methods: []
       });
+      if (user.emergencyContact.phone) contactsToNotify[contactsToNotify.length - 1].methods.push('sms');
+      if (user.emergencyContact.email) contactsToNotify[contactsToNotify.length - 1].methods.push('email');
     }
 
     if (user.additionalContacts && Array.isArray(user.additionalContacts)) {
       user.additionalContacts.forEach(contact => {
-        if (contact.name && contact.phone) {
+        if (contact.name && (contact.phone || contact.email)) {
           contactsToNotify.push({
             contact,
-            method: 'sms'
+            methods: []
           });
+          if (contact.phone) contactsToNotify[contactsToNotify.length - 1].methods.push('sms');
+          if (contact.email) contactsToNotify[contactsToNotify.length - 1].methods.push('email');
         }
       });
     }
 
     // Store notifications
-    emergencyEvent.contactsNotified = contactsToNotify.map(({ contact, method }) => ({
-      contact,
-      method,
-      status: 'sent'
-    }));
+    emergencyEvent.contactsNotified = contactsToNotify.flatMap(({ contact, methods }) => 
+      methods.map(method => ({
+        contact,
+        method,
+        status: 'sent'
+      }))
+    );
 
     await emergencyEvent.save();
 
-    // TODO: Send SMS/WhatsApp notifications to contacts
-    // This would integrate with Twilio/Africa's Talking
-    // For now, create in-app notifications
+    // Generate emergency access link
+    const accessLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/emergency/${user.username}?token=${emergencyEvent.temporaryAccessToken}`;
+
+    // Send notifications to contacts (SMS and Email)
+    let smsResults = { success: false, successCount: 0, failureCount: 0 };
+    let emailResults = { success: false, successCount: 0, failureCount: 0 };
+    
+    if (contactsToNotify.length > 0) {
+      // Collect phone numbers for SMS
+      const phoneNumbers = contactsToNotify
+        .map(c => c.contact.phone)
+        .filter(phone => phone && phone.trim() !== '');
+      
+      // Collect emails for email
+      const emailAddresses = contactsToNotify
+        .map(c => c.contact.email)
+        .filter(email => email && email.trim() !== '');
+
+      // Send SMS
+      if (phoneNumbers.length > 0) {
+        const message = generateEmergencyMessage(
+          user.name,
+          location,
+          accessLink,
+          req.body.hospitalContact || null
+        );
+        smsResults = await sendSOS(phoneNumbers, message, user.name, location);
+      }
+
+      // Send Email
+      if (emailAddresses.length > 0) {
+        const emailPromises = emailAddresses.map(email => 
+          sendSOSEmail(email, user.name, location, accessLink, req.body.hospitalContact || null)
+        );
+        const emailResultsArray = await Promise.all(emailPromises);
+        emailResults = {
+          success: emailResultsArray.some(result => result === true),
+          successCount: emailResultsArray.filter(result => result === true).length,
+          failureCount: emailResultsArray.filter(result => result === false).length
+        };
+      }
+      
+      // Update notification status based on results
+      await emergencyEvent.save();
+    }
+
+    await emergencyEvent.save();
+
+    // Create in-app notification
+    const totalContacts = contactsToNotify.length;
+    const totalNotifications = (smsResults.successCount || 0) + (emailResults.successCount || 0);
+    
     try {
-      await createNotification(userId, {
+      await Notification.create({
+        userId,
         type: 'emergency',
         title: 'Emergency SOS Activated',
-        message: `Your emergency SOS has been activated. Emergency contacts have been notified.`,
-        actionUrl: `/dashboard/emergency`,
-        priority: 'critical',
+        message: `Your emergency SOS has been activated. ${totalNotifications} notifications sent to ${totalContacts} emergency contacts.`,
+        priority: 'urgent',
         color: 'red',
-        sendEmail: true,
-        sendPush: true
+        channels: {
+          email: emailResults.success,
+          sms: smsResults.success,
+        },
       });
     } catch (notifError) {
       console.error('Error creating emergency notification:', notifError);
     }
-
-    // Generate emergency access link
-    const accessLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/emergency/${user.username}?token=${emergencyEvent.temporaryAccessToken}`;
 
     res.status(201).json({
       success: true,
@@ -91,7 +147,10 @@ const triggerSOS = async (req, res) => {
       data: {
         event: emergencyEvent,
         accessLink,
-        contactsNotified: contactsToNotify.length
+        contactsNotified: totalContacts,
+        notificationsSent: totalNotifications,
+        smsResults,
+        emailResults
       }
     });
   } catch (error) {

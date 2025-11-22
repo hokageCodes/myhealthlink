@@ -98,24 +98,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/health-goals', healthGoalRoutes);
 
-// Start reminder scheduler
-if (process.env.NODE_ENV !== 'test') {
-  const { startScheduler } = require('./src/services/reminderScheduler');
-  startScheduler();
-  
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    const { stopScheduler } = require('./src/services/reminderScheduler');
-    stopScheduler();
-    process.exit(0);
-  });
-  
-  process.on('SIGINT', () => {
-    const { stopScheduler } = require('./src/services/reminderScheduler');
-    stopScheduler();
-    process.exit(0);
-  });
-}
+// Reminder scheduler will be started after database connection
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -165,9 +148,29 @@ const connectDB = async () => {
 const startServer = async () => {
   await connectDB();
   
-  app.listen(PORT, () => {
+  // Start reminder scheduler after database connection
+  if (process.env.NODE_ENV !== 'test') {
+    const { startScheduler } = require('./src/services/reminderScheduler');
+    startScheduler();
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      const { stopScheduler } = require('./src/services/reminderScheduler');
+      stopScheduler();
+      process.exit(0);
+    });
+    
+    process.on('SIGINT', () => {
+      const { stopScheduler } = require('./src/services/reminderScheduler');
+      stopScheduler();
+      process.exit(0);
+    });
+  }
+  
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📱 API URL: http://localhost:${PORT}/api`);
+    console.log(`🌐 Network URL: http://192.168.0.141:${PORT}/api`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   });
 };

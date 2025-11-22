@@ -1,218 +1,239 @@
-const Notification = require('../models/Notification');
-const { sendOTPEmail } = require('../utils/email');
+const nodemailer = require('nodemailer');
+const User = require('../models/User');
 
-/**
- * Create and store an in-app notification
- */
-const createNotification = async (userId, notificationData) => {
-  try {
-    const notification = new Notification({
-      userId,
-      type: notificationData.type || 'system',
-      title: notificationData.title,
-      message: notificationData.message,
-      actionUrl: notificationData.actionUrl,
-      actionLabel: notificationData.actionLabel,
-      relatedEntity: notificationData.relatedEntity,
-      priority: notificationData.priority || 'medium',
-      icon: notificationData.icon,
-      color: notificationData.color || 'blue',
-      expiresAt: notificationData.expiresAt,
-      channels: {
-        inApp: true,
-        email: notificationData.sendEmail || false,
-        sms: notificationData.sendSMS || false,
-        push: notificationData.sendPush || false
-      }
-    });
-
-    await notification.save();
-
-    // Send via other channels if requested
-    if (notificationData.sendEmail) {
-      await sendEmailNotification(userId, notification);
-    }
-
-    // SMS and Push notifications would go here (when implemented)
-    if (notificationData.sendSMS) {
-      // TODO: Implement SMS sending
-      notification.smsSent = false;
-    }
-
-    if (notificationData.sendPush) {
-      // TODO: Implement push notification
-      notification.pushSent = false;
-    }
-
-    return notification;
-  } catch (error) {
-    console.error('Error creating notification:', error);
-    throw error;
+const createTransporter = () => {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('SMTP configuration is missing. Email notifications will be disabled.');
+    return null;
   }
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_PORT === '465',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
 };
 
 /**
  * Send email notification
  */
-const sendEmailNotification = async (userId, notification) => {
+const sendEmail = async (to, subject, body, isHTML = true) => {
   try {
-    // Get user email from User model
-    const User = require('../models/User');
-    const user = await User.findById(userId).select('email name');
-
-    if (!user || !user.email) {
-      console.warn(`Cannot send email: User ${userId} has no email`);
-      return;
-    }
-
-    const { createTransporter } = require('../utils/email');
     const transporter = createTransporter();
+    if (!transporter) {
+      console.warn('Email transporter not available');
+      return false;
+    }
 
     const mailOptions = {
       from: `"My Health Link" <${process.env.SMTP_USER}>`,
-      to: user.email,
-      subject: notification.title,
-      html: generateEmailTemplate(notification, user.name)
+      to,
+      subject,
+      [isHTML ? 'html' : 'text']: body,
     };
 
     await transporter.sendMail(mailOptions);
-
-    // Update notification
-    notification.emailSent = true;
-    notification.emailSentAt = new Date();
-    await notification.save();
-
-    console.log(`Email notification sent to ${user.email}`);
+    console.log(`Email sent successfully to ${to}`);
+    return true;
   } catch (error) {
-    console.error('Error sending email notification:', error);
-    throw error;
+    console.error('Error sending email:', error);
+    return false;
   }
 };
 
 /**
- * Generate HTML email template for notifications
+ * Generate email template for medication reminder
  */
-const generateEmailTemplate = (notification, userName) => {
-  const greeting = userName ? `Hi ${userName},` : 'Hello,';
-  
-  let actionButton = '';
-  if (notification.actionUrl) {
-    actionButton = `
-      <div style="margin: 20px 0; text-align: center;">
-        <a href="${notification.actionUrl}" 
-           style="background-color: #2563eb; color: white; padding: 12px 24px; 
-                  text-decoration: none; border-radius: 6px; display: inline-block;">
-          ${notification.actionLabel || 'View Details'}
-        </a>
-      </div>
-    `;
-  }
-
+const generateMedicationReminderEmail = (userName, medicationName, dosage, notes) => {
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background-color: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">My Health Link</h1>
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #16a34a; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">⏰ Medication Reminder</h1>
       </div>
-      <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
-        <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
-          ${greeting}
-        </p>
-        <h2 style="color: #111827; margin-top: 0;">${notification.title}</h2>
-        <p style="color: #6b7280; font-size: 15px; line-height: 1.6;">
-          ${notification.message}
-        </p>
-        ${actionButton}
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-          <p style="color: #9ca3af; font-size: 12px;">
-            This is an automated notification from My Health Link.
-          </p>
+      <div style="padding: 30px; background-color: #f9fafb;">
+        <p style="font-size: 16px;">Hello ${userName},</p>
+        <p style="font-size: 16px;">It's time to take your medication!</p>
+        <div style="background-color: white; border-left: 4px solid #16a34a; padding: 20px; margin: 20px 0;">
+          <h2 style="color: #16a34a; margin-top: 0;">${medicationName}</h2>
+          ${dosage ? `<p style="font-size: 16px; margin: 10px 0;"><strong>Dosage:</strong> ${dosage}</p>` : ''}
+          ${notes ? `<p style="font-size: 14px; color: #666;">${notes}</p>` : ''}
         </div>
+        <p style="font-size: 14px; color: #666;">Please remember to take your medication as prescribed.</p>
+        <p style="font-size: 14px; color: #666;">Take care! 💚</p>
+      </div>
+      <div style="background-color: #f3f4f6; padding: 20px; text-align: center;">
+        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+          This is an automated reminder from MyHealthLink
+        </p>
       </div>
     </div>
   `;
 };
 
 /**
- * Send reminder notification
+ * Generate email template for appointment reminder
  */
-const sendReminderNotification = async (reminder, userId) => {
-  const notificationData = {
-    type: 'reminder',
-    title: `Reminder: ${reminder.title}`,
-    message: reminder.description || `Don't forget: ${reminder.title}`,
-    actionUrl: reminder.relatedMedicationId 
-      ? `/dashboard/medications` 
-      : reminder.relatedAppointmentId 
-        ? `/dashboard/appointments`
-        : `/dashboard/reminders`,
-    actionLabel: 'View Details',
-    relatedEntity: {
-      id: reminder._id,
-      type: 'Reminder'
-    },
-    priority: reminder.priority || 'medium',
-    color: reminder.priority === 'urgent' ? 'red' : reminder.priority === 'high' ? 'orange' : 'blue',
-    sendEmail: reminder.notifications?.email || false,
-    sendSMS: reminder.notifications?.sms || false,
-    sendPush: reminder.notifications?.push || false
-  };
+const generateAppointmentReminderEmail = (userName, appointmentTitle, dateTime, location, notes) => {
+  const formattedDate = new Date(dateTime).toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
-  return await createNotification(userId, notificationData);
+  return `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #3b82f6; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">📅 Appointment Reminder</h1>
+      </div>
+      <div style="padding: 30px; background-color: #f9fafb;">
+        <p style="font-size: 16px;">Hello ${userName},</p>
+        <p style="font-size: 16px;">You have an upcoming appointment!</p>
+        <div style="background-color: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0;">
+          <h2 style="color: #3b82f6; margin-top: 0;">${appointmentTitle}</h2>
+          <p style="font-size: 16px; margin: 10px 0;"><strong>📅 Date & Time:</strong> ${formattedDate}</p>
+          ${location ? `<p style="font-size: 16px; margin: 10px 0;"><strong>📍 Location:</strong> ${location}</p>` : ''}
+          ${notes ? `<p style="font-size: 14px; color: #666;">${notes}</p>` : ''}
+        </div>
+        <p style="font-size: 14px; color: #666;">Please plan to arrive 15 minutes early.</p>
+        <p style="font-size: 14px; color: #666;">Take care! 💙</p>
+      </div>
+      <div style="background-color: #f3f4f6; padding: 20px; text-align: center;">
+        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+          This is an automated reminder from MyHealthLink
+        </p>
+      </div>
+    </div>
+  `;
 };
 
 /**
- * Send appointment notification
+ * Generate email template for health check reminder
  */
-const sendAppointmentNotification = async (appointment, userId, type = 'reminder') => {
-  const timeUntil = getTimeUntilAppointment(appointment.date, appointment.time);
-  
-  const notificationData = {
-    type: 'appointment',
-    title: `Appointment: ${appointment.title}`,
-    message: `${appointment.title} with ${appointment.provider} is ${timeUntil}`,
-    actionUrl: `/dashboard/appointments`,
-    actionLabel: 'View Appointment',
-    relatedEntity: {
-      id: appointment._id,
-      type: 'Appointment'
-    },
-    priority: 'high',
-    color: 'purple',
-    sendEmail: true,
-    sendPush: true
-  };
-
-  return await createNotification(userId, notificationData);
+const generateHealthCheckReminderEmail = (userName, title, description) => {
+  return `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #f59e0b; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">🏥 Health Check Reminder</h1>
+      </div>
+      <div style="padding: 30px; background-color: #f9fafb;">
+        <p style="font-size: 16px;">Hello ${userName},</p>
+        <p style="font-size: 16px;">Time for your health check!</p>
+        <div style="background-color: white; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+          <h2 style="color: #f59e0b; margin-top: 0;">${title}</h2>
+          ${description ? `<p style="font-size: 14px; color: #666;">${description}</p>` : ''}
+        </div>
+        <p style="font-size: 14px; color: #666;">Don't forget to track your health metrics!</p>
+        <p style="font-size: 14px; color: #666;">Take care! 💛</p>
+      </div>
+      <div style="background-color: #f3f4f6; padding: 20px; text-align: center;">
+        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+          This is an automated reminder from MyHealthLink
+        </p>
+      </div>
+    </div>
+  `;
 };
 
 /**
- * Get time until appointment (helper function)
+ * Send SMS notification (placeholder for future implementation)
  */
-const getTimeUntilAppointment = (date, time) => {
-  const appointmentDateTime = new Date(date);
-  if (time) {
-    const [hours, minutes] = time.split(':');
-    appointmentDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-  }
+const sendSMS = async (to, message) => {
+  // TODO: Implement SMS integration with Twilio or Africa's Talking
+  console.log(`[SMS] Would send to ${to}: ${message}`);
+  return false;
+};
 
-  const now = new Date();
-  const diffMs = appointmentDateTime - now;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
+/**
+ * Send notification based on type
+ */
+const sendNotification = async (user, reminder) => {
+  try {
+    // Get user details
+    const userDetails = await User.findById(user).select('name email phone');
+    if (!userDetails) {
+      console.error(`User not found: ${user}`);
+      return false;
+    }
 
-  if (diffDays > 0) {
-    return `in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
-  } else if (diffHours > 0) {
-    return `in ${diffHours} hour${diffHours > 1 ? 's' : ''}`;
-  } else {
-    return 'very soon';
+    let success = false;
+    const userName = userDetails.name || 'Valued User';
+
+    // Send email if enabled
+    if (reminder.notifications.email) {
+      let emailBody = '';
+      let subject = '';
+
+      switch (reminder.type) {
+        case 'medication':
+          subject = `Medication Reminder: ${reminder.title}`;
+          emailBody = generateMedicationReminderEmail(
+            userName,
+            reminder.title || reminder.medicationName,
+            reminder.dosage,
+            reminder.description
+          );
+          break;
+
+        case 'appointment':
+          subject = `Appointment Reminder: ${reminder.title}`;
+          emailBody = generateAppointmentReminderEmail(
+            userName,
+            reminder.title,
+            reminder.scheduledFor,
+            null,
+            reminder.description
+          );
+          break;
+
+        case 'health-check':
+        case 'vaccination':
+        case 'lab-test':
+          subject = `Health Check Reminder: ${reminder.title}`;
+          emailBody = generateHealthCheckReminderEmail(
+            userName,
+            reminder.title,
+            reminder.description
+          );
+          break;
+
+        default:
+          subject = `Reminder: ${reminder.title}`;
+          emailBody = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Reminder</h2>
+              <p>${reminder.description || reminder.title}</p>
+            </div>
+          `;
+      }
+
+      success = await sendEmail(userDetails.email, subject, emailBody);
+    }
+
+    // Send SMS if enabled (future implementation)
+    if (reminder.notifications.sms && userDetails.phone) {
+      const smsMessage = `MyHealthLink Reminder: ${reminder.title}`;
+      await sendSMS(userDetails.phone, smsMessage);
+    }
+
+    return success;
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    return false;
   }
 };
 
 module.exports = {
-  createNotification,
-  sendEmailNotification,
-  sendReminderNotification,
-  sendAppointmentNotification
+  sendEmail,
+  sendSMS,
+  sendNotification,
+  generateMedicationReminderEmail,
+  generateAppointmentReminderEmail,
+  generateHealthCheckReminderEmail,
 };
-

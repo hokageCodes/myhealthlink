@@ -39,7 +39,9 @@ const ProfileSchema = Yup.object({
   dateOfBirth: Yup.date().max(new Date(), 'Date cannot be in the future').required('Date of birth is required'),
   gender: Yup.string().oneOf(['male', 'female', 'other']).required('Gender is required'),
   bloodType: Yup.string().oneOf(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', ''], 'Invalid blood type'),
+  genotype: Yup.string().oneOf(['AA', 'AS', 'AC', 'SS', 'SC', 'CC', ''], 'Invalid genotype'),
   allergies: Yup.string().max(500, 'Allergies cannot exceed 500 characters'),
+  currentMedications: Yup.string().max(1000, 'Medications cannot exceed 1000 characters'),
   emergencyContact: Yup.object().shape({
     name: Yup.string().max(50, 'Name too long'),
     phone: Yup.string().matches(phoneRegex, 'Invalid Nigerian phone number'),
@@ -86,7 +88,9 @@ export default function ProfilePage() {
       dateOfBirth: userData?.dateOfBirth ? new Date(userData.dateOfBirth).toISOString().split('T')[0] : '',
       gender: userData?.gender || '',
       bloodType: userData?.bloodType || '',
+      genotype: userData?.genotype || '',
       allergies: userData?.allergies || '',
+      currentMedications: userData?.currentMedications || '',
       emergencyContact: {
         name: userData?.emergencyContact?.name || '',
         phone: userData?.emergencyContact?.phone || '',
@@ -320,7 +324,6 @@ export default function ProfilePage() {
           <div className="bg-white/70 backdrop-blur-md border border-gray-100 shadow-md rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Example input */}
               <label>
                 <span className="text-sm font-medium text-gray-700">Full Name</span>
                 <input
@@ -339,6 +342,109 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
                 />
+              </label>
+            </div>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md border border-gray-100 shadow-md rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-600" />
+              Vital Information
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">Critical health information displayed on your shareable profile</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label>
+                <span className="text-sm font-medium text-gray-700">Date of Birth</span>
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  {...formik.getFieldProps('dateOfBirth')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+              </label>
+
+              <label>
+                <span className="text-sm font-medium text-gray-700">Gender</span>
+                <select
+                  name="gender"
+                  {...formik.getFieldProps('gender')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="text-sm font-medium text-gray-700">Blood Type</span>
+                <select
+                  name="bloodType"
+                  {...formik.getFieldProps('bloodType')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                >
+                  <option value="">Select blood type</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="text-sm font-medium text-gray-700">Genotype</span>
+                <select
+                  name="genotype"
+                  {...formik.getFieldProps('genotype')}
+                  disabled={!isEditing}
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                >
+                  <option value="">Select genotype</option>
+                  <option value="AA">AA</option>
+                  <option value="AS">AS</option>
+                  <option value="AC">AC</option>
+                  <option value="SS">SS</option>
+                  <option value="SC">SC</option>
+                  <option value="CC">CC</option>
+                </select>
+              </label>
+
+              <label className="md:col-span-2">
+                <span className="text-sm font-medium text-gray-700">Allergies</span>
+                <textarea
+                  name="allergies"
+                  {...formik.getFieldProps('allergies')}
+                  disabled={!isEditing}
+                  rows={3}
+                  placeholder="List any allergies (e.g., Penicillin, Peanuts, Latex)"
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+                {formik.touched.allergies && formik.errors.allergies && (
+                  <p className="text-sm text-red-600 mt-1">{formik.errors.allergies}</p>
+                )}
+              </label>
+
+              <label className="md:col-span-2">
+                <span className="text-sm font-medium text-gray-700">Current Medications</span>
+                <textarea
+                  name="currentMedications"
+                  {...formik.getFieldProps('currentMedications')}
+                  disabled={!isEditing}
+                  rows={3}
+                  placeholder="List current medications and dosages (e.g., Metformin 500mg twice daily)"
+                  className={`mt-1 block w-full rounded-lg px-3 py-2 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-green-500' : 'border-transparent bg-gray-50 text-gray-500'} transition`}
+                />
+                {formik.touched.currentMedications && formik.errors.currentMedications && (
+                  <p className="text-sm text-red-600 mt-1">{formik.errors.currentMedications}</p>
+                )}
               </label>
             </div>
           </div>
