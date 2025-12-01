@@ -10,10 +10,13 @@ import {
   QrCode,
   Download,
   Zap,
+  ArrowRight,
 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function FeaturesListSection() {
-  const features = [
+  const allFeatures = [
     {
       icon: Heart,
       title: 'Complete Health Profile',
@@ -80,9 +83,10 @@ export default function FeaturesListSection() {
     },
   ];
 
-  const mid = Math.ceil(features.length / 2);
-  const leftFeatures = features.slice(0, mid);
-  const rightFeatures = features.slice(mid);
+  // Show only first 4 features
+  const displayedFeatures = allFeatures.slice(0, 4);
+  const leftFeatures = displayedFeatures.slice(0, 2);
+  const rightFeatures = displayedFeatures.slice(2, 4);
 
   return (
     <section id="features-list" className="relative py-12 lg:py-16 bg-white overflow-hidden">
@@ -116,8 +120,8 @@ export default function FeaturesListSection() {
 
         {/* Content Grid */}
         <div className="max-w-7xl mx-auto">
-          <div className="grid gap-12 items-start lg:grid-cols-[1fr_auto_1fr]">
-            {/* Left column */}
+          <div className="grid gap-8 lg:gap-12 items-start lg:grid-cols-[1fr_auto_1fr]">
+            {/* Left column - 2 features */}
             <div className="space-y-4">
               {leftFeatures.map((feature, index) => {
                 const Icon = feature.icon;
@@ -151,128 +155,11 @@ export default function FeaturesListSection() {
             <div className="flex justify-center">
               <div className="relative mx-auto max-w-sm lg:sticky lg:top-24">
                 {/* Phone Frame */}
-                <div className="relative bg-neutral-900 rounded-[3rem] p-3 shadow-2xl">
-                  {/* Notch */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-neutral-900 rounded-b-3xl z-10" />
-
-                  {/* Screen */}
-                  <div className="relative bg-white rounded-[2.5rem] overflow-hidden aspect-[9/19]">
-                    {/* Status Bar */}
-                    <div className="absolute top-0 left-0 right-0 h-12 flex items-center justify-between px-8 text-xs font-medium text-neutral-900">
-                      <span>9:41</span>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-4 h-3 border border-neutral-900 rounded-sm" />
-                        <div className="w-1 h-3 bg-neutral-900 rounded-sm" />
-                      </div>
-                    </div>
-
-                    {/* App Content */}
-                    <div className="px-6 pt-16 pb-8 space-y-6">
-                      {/* Header */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-2xl font-bold text-neutral-900">
-                            Health Hub
-                          </h3>
-                          <p className="text-sm text-neutral-500">
-                            All your records
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
-                          <Heart
-                            className="w-6 h-6 text-brand-600"
-                            fill="currentColor"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Quick Stats */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-brand-50 rounded-2xl p-4 border border-brand-200">
-                          <div className="text-3xl font-bold text-brand-600 mb-1">
-                            24
-                          </div>
-                          <div className="text-xs text-neutral-600">
-                            Documents
-                          </div>
-                        </div>
-                        <div className="bg-accent-50 rounded-2xl p-4 border border-accent-200">
-                          <div className="text-3xl font-bold text-accent-600 mb-1">
-                            3
-                          </div>
-                          <div className="text-xs text-neutral-600">
-                            Providers
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Recent Activity */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-neutral-500 uppercase">
-                          Recent
-                        </h4>
-
-                        {[
-                          {
-                            type: 'Lab Result',
-                            time: '2 hours ago',
-                            color: 'bg-success-500',
-                          },
-                          {
-                            type: 'Prescription',
-                            time: '1 day ago',
-                            color: 'bg-brand-500',
-                          },
-                          {
-                            type: 'X-Ray Scan',
-                            time: '3 days ago',
-                            color: 'bg-accent-500',
-                          },
-                        ].map((item, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-xl"
-                          >
-                            <div
-                              className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center`}
-                            >
-                              <FileText className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-neutral-900 truncate">
-                                {item.type}
-                              </p>
-                              <p className="text-xs text-neutral-500">
-                                {item.time}
-                              </p>
-                            </div>
-                            <Check className="w-4 h-4 text-success-500" />
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* QR Code Card */}
-                      <div className="rounded-2xl p-4 text-white">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <p className="text-sm opacity-90">
-                              Share your profile
-                            </p>
-                            <p className="text-lg font-bold">QR Code</p>
-                          </div>
-                          <QrCode className="w-8 h-8" />
-                        </div>
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center justify-center">
-                          <div className="w-20 h-20 bg-white rounded-lg" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Image src="/center.png" alt="Feature 1" width={1400} height={1200} />
               </div>
             </div>
 
-            {/* Right column */}
+            {/* Right column - 2 features */}
             <div className="space-y-4">
               {rightFeatures.map((feature, index) => {
                 const Icon = feature.icon;
@@ -301,6 +188,17 @@ export default function FeaturesListSection() {
                 );
               })}
             </div>
+          </div>
+
+          {/* View All Features CTA */}
+          <div className="text-center mt-12">
+            <a
+              href="#features"
+              className="inline-flex items-center justify-center px-8 py-3 text-brand-600 border-2 border-brand-200 hover:border-brand-500 hover:text-brand-700 bg-white rounded-full text-base font-medium transition-all duration-300 hover:shadow-lg"
+            >
+              View All Features
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>

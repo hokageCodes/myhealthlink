@@ -26,20 +26,28 @@ export default function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-          <button className="inline-flex items-center justify-center px-8 py-3 text-white bg-brand-500 hover:bg-brand-600 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg">
+          <a
+            href="https://appetize.io/embed/b_chvduqipiukrpnyjxivd7dqwdi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-8 py-3 text-white bg-brand-500 hover:bg-brand-600 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+          >
             Get Started
             <ArrowRight className="ml-2 w-4 h-4" />
-          </button>
+          </a>
 
-          <button className="inline-flex items-center justify-center px-8 py-3 text-brand-600 border border-brand-200 hover:border-brand-500 hover:text-brand-700 bg-white rounded-full text-base font-medium transition-all duration-300">
+          <a
+            href="#features"
+            className="inline-flex items-center justify-center px-8 py-3 text-brand-600 border border-brand-200 hover:border-brand-500 hover:text-brand-700 bg-white rounded-full text-base font-medium transition-all duration-300"
+          >
             Learn More
-          </button>
+          </a>
         </div>
 
         {/* Mockup / Illustration */}
         <div className="relative mt-20">
           <Image
-            src="https://landingfoliocom.imgix.net/store/collection/dusk/images/hero/4/dashboard-mockup.png"
+            src="/Shot.png"
             alt="Health dashboard preview"
             width={1200}
             height={800}

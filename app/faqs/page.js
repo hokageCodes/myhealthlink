@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Minus, HelpCircle } from 'lucide-react';
+import { Plus, Minus, HelpCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FAQsPage() {
@@ -61,35 +61,39 @@ export default function FAQsPage() {
   ];
 
   return (
-    <section className="py-20 lg:py-32 bg-gradient-to-br from-neutral-50 via-white to-brand-50">
-      <div className="container mx-auto px-4 lg:px-6">
-        {/* Header with Animation */}
-        <motion.div 
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl mx-auto text-center mb-16"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center space-x-2 bg-white px-4 py-2 rounded-full border border-brand-200 shadow-sm mb-6"
-          >
-            <HelpCircle className="w-4 h-4 text-brand-600" />
-            <span className="text-sm font-semibold text-brand-700">FREQUENTLY ASKED QUESTIONS</span>
-          </motion.div>
-          <h1 className="text-4xl lg:text-5xl font-bold font-heading text-neutral-900 mb-6">
-            Got questions?{' '}
-            <span className="text-brand-600">We've got answers</span>
-          </h1>
-          <p className="text-lg text-neutral-600 leading-relaxed">
-            Everything you need to know about MyHealthLink. Can't find what you're looking for?{' '}
-            <Link href="/contact" className="text-brand-600 hover:text-brand-700 font-semibold underline">
-              Chat with our team
-            </Link>
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative py-12 lg:py-16">
+        <div className="container mx-auto px-4 lg:px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.h1
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl lg:text-6xl font-bold font-heading text-neutral-900 mb-6 mt-16"
+            >
+              Got questions?{' '}
+              <span className="text-brand-600">We've got answers</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xl text-neutral-600 leading-relaxed max-w-2xl mx-auto"
+            >
+              Everything you need to know about MyHealthLink. Can't find what you're looking for?{' '}
+              <Link href="/contact" className="text-brand-600 hover:text-brand-700 font-semibold underline">
+                Chat with our team
+              </Link>
+            </motion.p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQs Section */}
+      <section className="py-8 lg:py-12 bg-white">
+        <div className="container mx-auto px-4 lg:px-6">
 
         {/* FAQs List with Scroll Animations */}
         <div className="max-w-4xl mx-auto space-y-4">
@@ -147,75 +151,57 @@ export default function FAQsPage() {
           })}
         </div>
 
-        {/* Back to Home Link */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mt-16 text-center"
-        >
-          <Link href="/" className="text-brand-600 hover:text-brand-700 font-semibold underline">
-            Back to home
-          </Link>
-        </motion.div>
-      </div>
+        </div>
+      </section>
 
-      {/* Bottom CTA with Animation */}
-      <motion.div 
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-100px' }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="container mx-auto px-4 lg:px-6 mt-16"
-      >
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-8 lg:p-12 text-center text-white shadow-2xl">
-            <motion.h3 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-3xl font-bold font-heading mb-4"
-            >
-              Still have questions?
-            </motion.h3>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-brand-50 text-lg mb-6"
-            >
-              Our support team is here to help you get started with MyHealthLink.
-            </motion.p>
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href="/contact"
-                  className="inline-block px-8 py-4 bg-white hover:bg-neutral-50 text-brand-600 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
+      {/* CTA Section */}
+      <section className="py-12 lg:py-20 bg-white">
+        <div className="container mx-auto px-4 lg:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="bg-white p-12 text-center rounded-3xl border-2 border-brand-200 shadow-xl">
+              <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-8 rounded-2xl border border-brand-200">
+                <div className="flex-1 text-left">
+                  <h3 className="text-2xl font-bold font-heading text-neutral-900 mb-2">
+                    Ready to get started?
+                  </h3>
+                  <p className="text-neutral-600">
+                    Join thousands of Nigerians organizing their health records with MyHealthLink.
+                  </p>
+                </div>
+                <a
+                  href="https://appetize.io/embed/b_chvduqipiukrpnyjxivd7dqwdi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 whitespace-nowrap"
                 >
-                  Contact Support
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href="/demo"
-                  className="inline-block px-8 py-4 bg-brand-700 hover:bg-brand-800 text-white font-semibold rounded-full border-2 border-white/20 transition-all duration-200"
-                >
-                  Schedule a Demo
-                </Link>
-              </motion.div>
-            </motion.div>
+                  Start Free Today
+                </a>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Back to Home Link */}
+      <section className="py-8">
+        <div className="container mx-auto px-4 lg:px-6">
+          <div className="text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center text-brand-600 hover:text-brand-700 font-semibold transition-colors"
+            >
+              <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+              Back to home
+            </Link>
           </div>
         </div>
-      </motion.div>
-    </section>
+      </section>
+    </div>
   );
 }

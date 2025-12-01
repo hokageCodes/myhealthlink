@@ -77,9 +77,9 @@ export default function FAQSection() {
           </p>
         </div>
 
-        {/* FAQ Items (show only first 5) */}
+        {/* FAQ Items (show only first 3) */}
         <div className="max-w-4xl mx-auto space-y-4">
-          {faqs.slice(0, 5).map((faq, index) => {
+          {faqs.slice(0, 3).map((faq, index) => {
             const isOpen = openIndex === index;
             
             return (
@@ -115,13 +115,13 @@ export default function FAQSection() {
           })}
         </div>
 
-        {/* View all FAQs link */}
-        <div className="mt-8 text-center">
+        {/* View all FAQs CTA */}
+        <div className="mt-12 text-center">
           <a
             href="/faqs"
-            className="inline-block px-6 py-3 rounded-full border border-brand-300 text-brand-700 hover:bg-brand-50 font-semibold transition-colors"
+            className="inline-flex items-center justify-center px-8 py-3 text-brand-600 border-2 border-brand-200 hover:border-brand-500 hover:text-brand-700 bg-white rounded-full text-base font-medium transition-all duration-300 hover:shadow-lg"
           >
-            View all FAQs
+            View All FAQs
           </a>
         </div>
 

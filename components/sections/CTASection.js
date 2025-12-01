@@ -16,7 +16,9 @@ export default function CTASection() {
         </p>
       </div>
       <a
-        href="/register"
+        href="https://appetize.io/embed/b_chvduqipiukrpnyjxivd7dqwdi"
+        target="_blank"
+        rel="noopener noreferrer"
         className="px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 whitespace-nowrap"
       >
         Start Free Today
