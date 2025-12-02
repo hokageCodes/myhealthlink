@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { 
   Share2, 
@@ -39,13 +39,7 @@ export default function PublicSharePage() {
   const [verifying, setVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (username) {
-      fetchPublicProfile();
-    }
-  }, [username, accessToken]);
-
-  const fetchPublicProfile = async (token = null) => {
+  const fetchPublicProfile = useCallback(async (token = null) => {
     try {
       setLoading(true);
       setError(null);
@@ -76,7 +70,13 @@ export default function PublicSharePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username, accessToken]);
+
+  useEffect(() => {
+    if (username) {
+      fetchPublicProfile();
+    }
+  }, [username, fetchPublicProfile]);
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();

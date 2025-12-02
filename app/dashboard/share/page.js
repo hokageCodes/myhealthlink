@@ -13,7 +13,8 @@ import {
   Heart,
   Shield,
   Eye,
-  EyeOff
+  EyeOff,
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCodeModal from '@/components/QRCodeModal';

@@ -73,7 +73,7 @@ export default function FAQsPage() {
               className="text-4xl lg:text-6xl font-bold font-heading text-neutral-900 mb-6 mt-16"
             >
               Got questions?{' '}
-              <span className="text-brand-600">We've got answers</span>
+              <span className="text-brand-600">We&apos;ve got answers</span>
             </motion.h1>
 
             <motion.p
@@ -82,7 +82,7 @@ export default function FAQsPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-neutral-600 leading-relaxed max-w-2xl mx-auto"
             >
-              Everything you need to know about MyHealthLink. Can't find what you're looking for?{' '}
+              Everything you need to know about MyHealthLink. Can&apos;t find what you&apos;re looking for?{' '}
               <Link href="/contact" className="text-brand-600 hover:text-brand-700 font-semibold underline">
                 Chat with our team
               </Link>

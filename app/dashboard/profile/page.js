@@ -240,7 +240,7 @@ export default function ProfilePage() {
               <div className="relative group">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md">
                   {localPreviewUrl ? (
-                    <img src={localPreviewUrl} alt="Profile" className="object-cover w-full h-full" />
+                    <Image src={localPreviewUrl} alt="Profile" width={112} height={112} className="object-cover w-full h-full" unoptimized />
                   ) : userData?.profilePicture ? (
                     <Image
                       src={userData.profilePicture}
