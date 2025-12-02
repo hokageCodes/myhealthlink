@@ -368,7 +368,7 @@ export default function PrivacyPage() {
               </select>
               {userData?.shareLinkSettings?.expiresAt && new Date(userData.shareLinkSettings.expiresAt) < new Date() && (
                 <p className="text-xs text-red-600 mt-2 font-medium">
-                  ⚠️ Your link has expired. Select "Expired - Remove expiry" above and save to fix this.
+                  ⚠️ Your link has expired. Select Expired - Remove expiry above and save to fix this.
                 </p>
               )}
               {userData?.shareLinkSettings?.expiresAt && (
