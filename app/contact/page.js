@@ -103,7 +103,7 @@ export default function ContactPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-neutral-600 leading-relaxed max-w-2xl mx-auto"
             >
-              Have questions? We're here to help. Reach out to our team and we'll get back to you as soon as possible.
+              Have questions? We are here to help. Reach out to our team and we will get back to you as soon as possible.
             </motion.p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function ContactPage() {
                   >
                     <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0" />
                     <p className="text-success-700 font-medium">
-                      Thank you! Your message has been sent. We'll get back to you soon.
+                      Thank you! Your message has been sent. We will get back to you soon.
                     </p>
                   </motion.div>
                 )}
@@ -291,7 +291,7 @@ export default function ContactPage() {
                     Need immediate assistance?
                   </h3>
                   <p className="text-neutral-600 text-sm leading-relaxed">
-                    For urgent matters, please call us directly or send an email with "URGENT" in the subject line. We prioritize urgent requests and aim to respond within 2 hours during business hours.
+                    For urgent matters, please call us directly or send an email with URGENT in the subject line. We prioritize urgent requests and aim to respond within 2 hours during business hours.
                   </p>
                 </div>
               </motion.div>

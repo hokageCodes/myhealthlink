@@ -358,7 +358,7 @@ export default function EmergencyPage() {
                   Linked to My Health Link profile: @{emergencyData.emergencyContact.linkedUsername}
                 </p>
                 <p className="text-xs text-green-700 mt-1">
-                  Contact's info will be automatically updated if they change their profile
+                  Contact info will be automatically updated if they change their profile
                 </p>
               </div>
             </div>
